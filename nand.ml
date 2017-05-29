@@ -44,25 +44,46 @@ let storeOfString (xVals: string) : store =
       s := VarMap.add id (bitOfChar c) !s
   in (String.iteri add xVals); !s
 
+(* returns line representing command*)
+let stringOfCom (c: com) =
+  let Nand(x, y, z) = c in
+    x^" := "^y^" NAND "^z
+
+(* returns string representing a program*)
+let stringOfProg (p: prog) : string =
+  (String.concat "\n" (List.map stringOfCom p))^"\n"
+
 
 (* tries to extract value of variable; if not found, returns Zero, as per
    cs121notes.pdf pg. 43 *)
 let extractVal (v: varID) (s: store) : bit =
   try VarMap.find v s with Not_found -> Zero
 
+let printCom (c: com) (s: store) (i: int) : unit =
+  let Nand(x, y, z) = c in
+  let yV, zV = extractVal y s, extractVal z s in
+  let xV = nand yV zV in
+  let line = stringOfCom c in
+  Printf.printf "Executing step %i: \"%s\", %s = %s, %s = %s, %s is assigned %s,\n"
+                i line y (stringOfBit yV) z (stringOfBit zV) x (stringOfBit xV)
+
 exception Bound_variable of varID
 
 (* evaluates a program by returning final store *)
-let evalProg (p: prog) (xVals: string) : store =
-  let rec helpEval (p: prog) (s: store) =
+let evalProg (p: prog) (xVals: string) (printVals: bool) : store =
+  let rec helpEval (p: prog) (s: store) (i: int) =
     match p with
     | [] -> s
-    | h::t -> let Nand(x, y, z) = h in
-                if VarMap.mem x s then
-                  raise (Bound_variable x)
-                else let newVal = nand (extractVal y s) (extractVal z s) in
-                  helpEval t (VarMap.add x newVal s)
- in helpEval p (storeOfString xVals)
+    | h::t ->
+      let Nand(x, y, z) = h in
+        if VarMap.mem x s then
+          raise (Bound_variable x)
+        else
+          let _ = (if printVals then printCom h s i) in
+          let yVal, zVal = extractVal y s, extractVal z s in
+          let newVal = nand yVal zVal in
+            helpEval t (VarMap.add x newVal s) (i + 1)
+ in helpEval p (storeOfString xVals) 1
 
 (* returns output of a store as a binary string *)
 let evalStore (s: store) : string =
@@ -74,12 +95,7 @@ let evalStore (s: store) : string =
         ""
 in helpEvalStore s 0
 
-(* returns string representing a program*)
- let stringOfProg (p: prog) : string =
-   let stringOfCom (c: com) =
-     let Nand(x, y, z) = c in
-       x^" := "^y^" NAND "^z
-   in (String.concat "\n" (List.map stringOfCom p))^"\n"
 
-let evaluate (p: prog) (xVals: string) : string =
-  evalStore (evalProg p xVals)
+(* given a program and string input, returns string output *)
+let evaluate (p: prog) (xVals: string) (print: bool) : string =
+  evalStore (evalProg p xVals print)
