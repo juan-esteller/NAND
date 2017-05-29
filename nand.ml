@@ -80,3 +80,6 @@ in helpEvalStore s 0
      let Nand(x, y, z) = c in
        x^" := "^y^" NAND "^z
    in (String.concat "\n" (List.map stringOfCom p))^"\n"
+
+let evaluate (p: prog) (xVals: string) : string =
+  evalStore (evalProg p xVals)
