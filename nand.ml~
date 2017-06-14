@@ -8,7 +8,7 @@ type varID = string
   type com = Nand of varID * varID * varID
 
   (* type for a program *)
-  type prog = com list
+  type prog = command list
 
   (* module for maps from variables *)
   module VarMap = Map.Make(String)

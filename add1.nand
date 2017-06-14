@@ -1,0 +1,7 @@
+ // Add two single-bit numbers
+u := x_0 NAND x_1
+v := x_0 NAND u
+w := x_1 NAND u
+y_0 := v NAND w
+y_1 := u NAND u
+

@@ -1,0 +1,35 @@
+open Plmodule.ml ;;
+open Nand.ml ;; 
+ 
+module type SSPL_type = sig
+  include PL_type
+  val removeSugar : program -> string 
+end 
+  
+type PreParsedSegment = 
+  | SourceLangStr of string 
+  | ConstAsg of varID * bit 
+  | VarAsg of varID * varID
+  | If of varID * string * string 
+  
+  
+
+module AddSS (Lang: PL_type) : SSPL_type = struct
+  
+  type command = 
+    | SourceLang of Lang.command 
+    | ConstAsg of string * bit  
+    | VarAsg of string * string
+
+  type program = command list 
+  
+  let parse (chan: in_channel) : program =
+    let pPP = NANDparser.preParse chan in 
+    let progOfSegment (seg : parsedSegment) : program = 
+      match seg with 
+      | SourceLangExp(s) -> 
+          List.map (fun c -> SourceLang(c)) (Lang.parse (Lexing.from_string s))
+      | SSExp(c) -> [c]
+    in List.concat (List.map progOfSegment pPP) 
+     
+end 

@@ -52,6 +52,6 @@ prog:
 
 noSS:
   | ID ASG ID op ID 
-     { Printf.sprintf "%s := %s %s %s" $1 $3 $4 $5 } 
+      { Printf.sprintf "%s := %s %s %s" $1 $3 $4 $5 } 
   
 ;
