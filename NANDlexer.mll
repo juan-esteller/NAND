@@ -6,38 +6,31 @@
   let _ = List.iter  (fun (kwd, tok) -> Hashtbl.add symTable kwd tok)
                         [ (":=", ASG);
                           ("NAND", NAND);
-                          ("(", L_PAREN);
-                          (")", R_PAREN);
-                          ("{", L_BRACKET);
-                          ("}", R_BRACKET);
-                          (",", COMMA);
-                          ("def", DEF);
-                          ("->", TO);
-                          (":", COLON);
                         ]
+
+  (* conversion from string to index *) 
+  let indOfString (s : string) : index = 
+    try 
+      Int(int_of_string i)
+    with Failure _s -> 
+      I
+  let expOfBase (b: string) (i: string): exp = 
+    let ind = indOfString i in 
+    match b with 
+    | "validx" -> IsValid(ind) 
+    | _s -> Var((b, ind))    
+      
 }
 
-let vID = ['a' - 'z']+'\''*(_['0'-'9']+)?
-let sym = ":=" | "NAND" | "(" | ")" | "{" | "}" | "," | "->" | ":"
-let const = "0" | "1"
-let fID = ['A' - 'Z']+
-let macroID = "@"['A' - 'Z']+
-let plType = ['A' - 'Z']['a' - 'z']*
-let macroEnd = macroID"_END"
-
+let sym = ":=" | "NAND"
+let ind = ['0' - '9']+ | 'i'  
+let base = ['a' - 'z']+  
 rule token = parse
   | [' ' '\t' '\n'] { token lexbuf } (* skip whitespace *)
   | "//" [^'\n']* '\n' { token lexbuf } (* skip one-line comments *)
-  | sym as s { (Printf.printf "found symbol %s\n" s); Hashtbl.find symTable s  }
-  | vID as word { ID (word) }
-  | fID as id { FUNC_ID(id) }
-  | const as c
-    { match c with
-      | '0' -> CONST(false)
-      | '1' -> CONST(true) }
-  | macroEnd as m  { let macroName = String.sub m 1 ((String.length m) - 5) in
-                        (Printf.printf "found macro end %s\n" macroName); MACRO_END(macroName) }
-  | macroID as m { let macroName = String.sub m 1 ((String.length m) - 1) in
-                    (Printf.printf "found macro %s\n" macroName); MACRO_START(macroName) }
-  | plType as p { (Printf.printf "found pl type %s\n" p); PL_TYPE(p) }
+  | sym as s { Hashtbl.find symTable s }
+  | (base)(ind as i) {
+      
+    }     
+  | (vID as word) (index as i)  { ID (word) }
   | eof { EOF }
