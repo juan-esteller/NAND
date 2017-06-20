@@ -1,10 +1,12 @@
 (* Type for bits  *)
 type bit = Zero | One
 
+(* indices into variables *) 
 type index = 
  | Int of int 
  | I 
 
+(* converts indices into strings *) 
 let strOfIndex (i: index) : string =  
   match i with 
   | Int(x) -> string_of_int x
@@ -44,9 +46,30 @@ and exp =
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of fxnID * args * (exp list) (* expressions in list must be unary *)
-  | IsValid of index (* corresponds to validx_i *)
+  | IsValid of index (* corresponds to validx_i *) 
 
+exception Invalid_command 
+exception Invalid_expression 
 
+(* utility function to apply mapping to valid run-time commands *) 
+let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a = 
+  match c with 
+  | Asg([h], [Nand(l, r)]) -> f h l r
+  | _ -> raise Invalid_command 
+
+(* converts valid run-time expressions to strings *) 
+let strOfExp (e: exp) : string = 
+  match e with 
+  | Var(x) -> strOfId x 
+  | IsValid(i) -> "isvalid_"^(strOfIndex i) 
+  | _ -> raise Invalid_command   
+
+(* ditto, for commands *) 
+let strOfCom: command ->  string =
+  let f (h: varID) (l: exp) (r: exp) : string = 
+    (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r) 
+  in mapOverCom f 
+  
 (* module for mapping varIDs (= Strings) to their bit values *)
 module VarMap = Map.Make(String)
 
@@ -71,8 +94,9 @@ type progData =
 
 module type PL_back_end = sig
   (* function that updates store & program data, raises
-     an exception in the case that they are not supported  *)
-  val evalCom : command -> store ref -> progData ref -> unit
+     an exception in the case that they are not supported, returns 
+     varID & its new value  *)
+  val evalCom : store ref -> progData -> command -> (varID * bit)  
 
   (* takes in a store, returns whether program terminates *)
   val endCondition: store -> bool
@@ -82,19 +106,13 @@ end
 
 
 module type PL_type = sig
-  val parse: in_channel -> program
   val execute: program -> string -> string
 end
 
-(* dummy parser *)
-let dummyParse (i: in_channel) : program = []
-
 exception Invalid_char of char
 
-module PlFromBackEnd (Lang : PL_back_end) : PL_type =
+module PLFromBackEnd (Lang : PL_back_end) : PL_type =
   struct
-    (* parser is the same for every programming language*)
-    let parse = dummyParse (* TODO, just throwing in so that this types *)
 
     (* converts a char to a bit *)
     let bitOfChar (c: char) : bit =
@@ -118,6 +136,7 @@ module PlFromBackEnd (Lang : PL_back_end) : PL_type =
 
       (* returns output of a store as a binary string *)
     let stringOfStore (s: store) (m: int) : string =
+      let _ = Printf.printf "Value of m: %i\n" m in 
       let rec helpEvalStore (s: store) (i: int) : string =
         let id = ("y", Int(i)) in
           if i < m then
@@ -127,9 +146,8 @@ module PlFromBackEnd (Lang : PL_back_end) : PL_type =
     in helpEvalStore s 0
 
     (* helper function that updates pData at end of an iteration *)
-    let updateProgData (pData: progData ref) : unit =
-      let pData = !pData in
-        begin
+    let updateProgData (pData: progData) : unit =
+       begin
           (if pData.i = 0 then
             (pData.r <- pData.r + 1);
             (pData.inc <- 1));
@@ -140,30 +158,32 @@ module PlFromBackEnd (Lang : PL_back_end) : PL_type =
         end
 
     (* increments m if necessary *)
-    let incM (pData: progData ref) (c: command) : unit =
-      let pData = !pData in
-        let extractIndexVal (id : varID) : int =
-          let (body, ind) = id  in 
-            match body with 
-            | "y" -> (match ind  with 
-                      | I -> pData.i 
-                      | Int(x) -> x)            
-            | _noty -> -1 (* won't cause any increase in m *)
-      in match c with
-         (* all commands that update m will be of this form
+    let incM (pData: progData) (c: command) : unit =
+      let extractIndexVal (id : varID) : int =
+        let (body, ind) = id  in 
+          match body with 
+          | "y" -> (match ind  with 
+                    | I -> pData.i 
+                    | Int(x) -> x + 1)            
+          | _noty -> -1 (* won't cause any increase in m *)
+    in match c with
+        (* all commands that update m will be of this form
             after removal of SS *)
-         | Asg([h], _exp) ->
-             (pData.i <- max pData.i (extractIndexVal h))
-         | _ignore -> ()
+       | Asg([h], _exp) ->
+           (pData.m <- max pData.m (extractIndexVal h))
+       | _ignore -> ()
 
 
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
-    let execCommand (pData: progData ref) (st: store ref) (c: command) : unit =
-      begin
-        Lang.evalCom c st pData;
-        incM pData c;
-      end
+    let execCommand (pData: progData) (st: store ref) (c: command) : unit =
+     let printCom (c: command) : unit = 
+      (* command executes in line below *) 
+      let id, b = Lang.evalCom st pData c in
+        let comStr = strOfCom c in   
+          Printf.printf "Executing command \"%s\", %s assigned value %s\n"
+                        comStr (strOfId id) (stringOfBit b)  
+      in begin printCom c; incM pData c; end
 
     (* evaluation of a program; will attempt to evaluate according
        to specification of Lang, raise an error in the case that
@@ -171,7 +191,7 @@ module PlFromBackEnd (Lang : PL_back_end) : PL_type =
     let execute (p : program) (s: string) : string =
       (* initializes program data *)
      let pData =
-          ref { pc = 0; r = 0; m = 0; i = 0; inc = 1; n = String.length s }
+          { pc = 0; r = 0; m = 0; i = 0; inc = 1; n = String.length s }
          (* initializes store *)
       in let st = ref (storeOfString s)
       (* loop that executes program until end condition is satisfied *)
@@ -183,5 +203,5 @@ module PlFromBackEnd (Lang : PL_back_end) : PL_type =
              (if not (Lang.endCondition !st) then evalLoop ());
            end
       in let _ = evalLoop () in
-           stringOfStore !st !pData.m
+           stringOfStore !st pData.m
 end  

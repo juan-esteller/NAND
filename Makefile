@@ -1,6 +1,6 @@
 MAIN= exec
 
-OBJS = nand.cmo NANDlexer.cmo NANDparser.cmo eval.cmo
+OBJS = PL_functor.cmo NANDlexer.cmo NANDparser.cmo PL_modules.cmo  main.cmo
 %.cmo : %.ml
 	ocamlc -g -c $<
 

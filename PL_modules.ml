@@ -1,8 +1,4 @@
-(* open progType.ml ;; *) (*uncomment to make *)
-
-
-(* exception for invalid commands *) 
-exception Invalid_command
+ open PL_functor
 
 (* simple NAND function *)
 let nand (l: bit) (r: bit) : bit = 
@@ -16,10 +12,10 @@ let bitOfBool (b: bool) : bit =
   | false -> Zero
 
 (* module for backend of NAND *) 
-module Nand_back_end : PL_back_end = 
+module NAND_back_end : PL_back_end = 
   struct 
     (* exception for repated gates *) 
-    exception Repeated_gate of varID 
+    exception Repeated_gate of string 
     
     (* exception for indidces that aren't integral *) 
     exception Invalid_index 
@@ -30,23 +26,24 @@ module Nand_back_end : PL_back_end =
       | _notValid -> raise Invalid_index   
    
     (* straightforward evaluation of a line; ignores pData *) 
-    let evalCom (c: command) (st: store ref) (_pData: progData ref) : unit =  
-      match c with 
-      | Asg([h], [Nand(Var(u), Var(v))]) -> 
-         (* checks that indices are valid *) 
-         let _ = begin assertInt h; assertInt u; assertInt v; end in 
-         let hStr = strOfId h in 
-         if VarMap.mem hStr !st then 
-           raise (Repeated_gate(h)) 
-         else let newValue = nand (safeFind u !st) (safeFind v !st) in 
-               (st := VarMap.add hStr newValue !st)   
-      | _ -> raise Invalid_command 
+    let evalCom (st: store ref) (_pData: progData) (c: command) : varID * bit =  
+     let f (h: varID) (l: exp) (r: exp) : varID * bit = 
+        match l, r with 
+        | Var(u), Var(v) ->      
+          let _ = begin assertInt h; assertInt u; assertInt v; end in 
+           let hStr = strOfId h in 
+             if VarMap.mem hStr !st then 
+               raise (Repeated_gate(hStr)) 
+             else let newValue = nand (safeFind u !st) (safeFind v !st) in 
+               (st := VarMap.add hStr newValue !st); (h, newValue)    
+        | _ -> raise Invalid_command
+     in mapOverCom f c 
     
     (* always finishes after one iteration *)
     let endCondition (_st: store) : bool = true 
 end 
-
-module NandPP_back_end : PL_back_end = 
+ 
+module NANDPP_back_end : PL_back_end = 
   struct
     let evalIndex (pData: progData) (ind: index) : int = 
       match ind with 
@@ -66,13 +63,13 @@ module NandPP_back_end : PL_back_end =
       | _ -> raise Invalid_command
  
     (* straightforward evaluation of a command *)           
-    let evalCom (c: command) (st: store ref) (pData: progData ref) : unit = 
-      match c with
-      | Asg([h], [Nand(e1, e2)]) -> 
-         let l, r = evalExp e1 !st !pData, evalExp e2 !st !pData in
-           (st := (VarMap.add (strOfId (extractId !pData h))  (nand  l r) !st))
-      | _ -> raise Invalid_command
+    let evalCom (st: store ref) (pData: progData) (c: command) : varID * bit = 
+      let f (h: varID) (l: exp) (r: exp) : varID * bit =    
+        let u, v = evalExp l !st pData, evalExp r !st pData in
+          let id, newValue  = strOfId (extractId pData h), nand u v in  
+           (st := (VarMap.add id  newValue !st)); h, newValue 
+      in mapOverCom f c
 
    let endCondition (st: store): bool  = 
      (safeFind ("loop", Int(0)) st) = Zero (* ends program in case loop set to Zero *) 
-end 
+end  
