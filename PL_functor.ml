@@ -1,16 +1,16 @@
 (* Type for bits  *)
 type bit = Zero | One
 
-(* indices into variables *) 
-type index = 
- | Int of int 
- | I 
+(* indices into variables *)
+type index =
+ | Int of int
+ | I
 
-(* converts indices into strings *) 
-let strOfIndex (i: index) : string =  
-  match i with 
-  | Int(x) -> string_of_int x
-  | I -> "i" 
+(* converts indices into strings *)
+let strOfIndex (i: index) : string =
+  match i with
+  | Int(x) ->"_"^(string_of_int x)
+  | I -> "_"^"i"
 
 (* Type for variable ID's; first string corresponds to
    the base, second string corresponds to the index--
@@ -18,9 +18,12 @@ let strOfIndex (i: index) : string =
    second string will be empty  *)
 type varID = string * index
 
-let strOfId (id: varID) : string =  
+let strOfId (id: varID) : string =
   let (body, ind) = id in 
-    body^"_"^(strOfIndex ind)  
+    if body = "loop" then
+      "loop" 
+    else 
+      body^(strOfIndex ind)
 
 (* type for arguments + outputs of functions *)
 type args = varID list
@@ -46,39 +49,42 @@ and exp =
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of fxnID * args * (exp list) (* expressions in list must be unary *)
-  | IsValid of index (* corresponds to validx_i *) 
+  | IsValid of index (* corresponds to validx_i *)
 
-exception Invalid_command 
-exception Invalid_expression 
+exception Invalid_command
+exception Invalid_expression
 
-(* utility function to apply mapping to valid run-time commands *) 
-let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a = 
-  match c with 
+(* utility function to apply mapping to valid run-time commands *)
+let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a =
+  match c with
   | Asg([h], [Nand(l, r)]) -> f h l r
-  | _ -> raise Invalid_command 
+  | _ -> raise Invalid_command
 
-(* converts valid run-time expressions to strings *) 
-let strOfExp (e: exp) : string = 
-  match e with 
-  | Var(x) -> strOfId x 
-  | IsValid(i) -> "isvalid_"^(strOfIndex i) 
-  | _ -> raise Invalid_command   
+(* converts valid run-time expressions to strings *)
+let strOfExp (e: exp) : string =
+  match e with
+  | Var(x) -> strOfId x
+  | IsValid(i) -> "isvalid_"^(strOfIndex i)
+  | _ -> raise Invalid_command
 
-(* ditto, for commands *) 
+(* ditto, for commands *)
 let strOfCom: command ->  string =
-  let f (h: varID) (l: exp) (r: exp) : string = 
-    (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r) 
-  in mapOverCom f 
-  
+  let f (h: varID) (l: exp) (r: exp) : string =
+    (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r)
+  in mapOverCom f
+
 (* module for mapping varIDs (= Strings) to their bit values *)
 module VarMap = Map.Make(String)
 
 (* type for store of varID's values *)
 type store = bit VarMap.t
 
+let safeFind (str: string) (st: store) : bit =
+  try VarMap.find str st with Not_found -> Zero
+
 (* tries to find id in store, returns 0 if not found *)
-let safeFind (id: varID) (st: store) : bit =
-  try VarMap.find (strOfId id) st with Not_found -> Zero
+let varFind (id: varID) (st: store) : bit =
+  safeFind (strOfId id) st
 
 
 (* record for keeping track of various pieces of data*)
@@ -88,15 +94,15 @@ type progData =
     mutable m: int;   (* maximum y index *)
     mutable i: int;   (* index that iterates up and down *)
     mutable inc: int;  (* increment for i *)
-    n: int        (* length of x input *) 
-    } 
+    n: int        (* length of x input *)
+    }
 
 
 module type PL_back_end = sig
   (* function that updates store & program data, raises
-     an exception in the case that they are not supported, returns 
+     an exception in the case that they are not supported, returns
      varID & its new value  *)
-  val evalCom : store ref -> progData -> command -> (varID * bit)  
+  val evalCom : store ref -> progData -> command -> (varID * bit)
 
   (* takes in a store, returns whether program terminates *)
   val endCondition: store -> bool
@@ -136,11 +142,11 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
 
       (* returns output of a store as a binary string *)
     let stringOfStore (s: store) (m: int) : string =
-      let _ = Printf.printf "Value of m: %i\n" m in 
+      let _ = Printf.printf "Value of m: %i\n" m in
       let rec helpEvalStore (s: store) (i: int) : string =
         let id = ("y", Int(i)) in
           if i < m then
-            (stringOfBit (safeFind id s))^(helpEvalStore s (i + 1))
+            (stringOfBit (varFind id s))^(helpEvalStore s (i + 1))
           else
             ""
     in helpEvalStore s 0
@@ -160,11 +166,11 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     (* increments m if necessary *)
     let incM (pData: progData) (c: command) : unit =
       let extractIndexVal (id : varID) : int =
-        let (body, ind) = id  in 
-          match body with 
-          | "y" -> (match ind  with 
-                    | I -> pData.i 
-                    | Int(x) -> x + 1)            
+        let (body, ind) = id  in
+          match body with
+          | "y" -> (match ind  with
+                    | I -> pData.i
+                    | Int(x) -> x + 1)
           | _noty -> -1 (* won't cause any increase in m *)
     in match c with
         (* all commands that update m will be of this form
@@ -177,12 +183,12 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
-     let printCom (c: command) : unit = 
-      (* command executes in line below *) 
+     let printCom (c: command) : unit =
+      (* command executes in line below *)
       let id, b = Lang.evalCom st pData c in
-        let comStr = strOfCom c in   
+        let comStr = strOfCom c in
           Printf.printf "Executing command \"%s\", %s assigned value %s\n"
-                        comStr (strOfId id) (stringOfBit b)  
+                        comStr (strOfId id) (stringOfBit b)
       in begin printCom c; incM pData c; end
 
     (* evaluation of a program; will attempt to evaluate according
@@ -204,4 +210,4 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
            end
       in let _ = evalLoop () in
            stringOfStore !st pData.m
-end  
+end
