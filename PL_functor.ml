@@ -187,39 +187,12 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
            (pData.m <- max pData.m (extractIndexVal h))
        | _ignore -> ()
 
-    exception Invalid_var of string 
-
-    let validLHS (b: string) : unit = 
-      match b with 
-      | "x" -> raise (Invalid_var(b))
-      | _ -> ()
-
-    let validRHS (b: string) : unit = 
-      match b with 
-      | "y" | "loop" -> raise (Invalid_var(b)) 
-      | _ -> ()
-   
-   let validExp (f: string -> unit)  (e: exp) : unit =  
-     match e with 
-     | Var((id, _ind)) -> f id 
-     | _ -> ()
-
-  let validateCom (c: command) : unit = 
-    let f (h: varID) (l: exp)  (r: exp) = 
-      begin 
-       validExp validLHS (Var(h));
-       validExp validRHS l; 
-       validExp validRHS r; 
-      end 
-  in mapOverCom f c  
-         
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
      let res, comStr = Lang.evalCom st pData c, strOfCom c in 
       let _ = (st := VarMap.add res.result res.resultVal !st) in
         begin 
-         validateCom c; 
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
                        comStr res.lhs (stringOfBit res.lhsVal) 
                               res.rhs (stringOfBit res.rhsVal) 

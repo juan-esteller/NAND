@@ -1,5 +1,20 @@
 %{
-open PL_functor;; 
+open PL_functor;;
+
+let writeOnly = ["y"; "loop"]
+let readOnly = ["x"]
+
+exception Invalid_var of string 
+
+let checkReadId (id: varID) : unit = 
+  let body, ind = id in 
+    if List.mem body writeOnly then 
+       raise (Invalid_var(strOfId id)) 
+
+let checkWriteId (id: varID) : unit = 
+  let body, ind = id in 
+    if List.mem body readOnly then 
+       raise (Invalid_var(strOfId id))  
 %}
 
 /* Declaration of tokens */
@@ -31,9 +46,9 @@ exps:
 
 exp: 
    | exp NAND exp { Nand($1, $3) } 
-   | ID { Var($1) }
+   | ID { (checkReadId $1); Var($1) }
    | IS_VALID { IsValid($1) }
  
 ids: 
-  | ID { [$1] }   
+  | ID {(checkWriteId $1);  [$1] }   
 ;
