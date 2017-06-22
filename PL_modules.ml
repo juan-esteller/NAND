@@ -1,4 +1,4 @@
- open PL_functor
+  open PL_functor 
 
 (* simple NAND function *)
 let nand (l: bit) (r: bit) : bit =
@@ -28,14 +28,18 @@ module NAND_back_end : PL_back_end =
       | _notValid -> raise Invalid_index
 
     (* straightforward evaluation of a line; ignores pData *)
-    let evalCom (st: store ref) (_pData: progData) (c: command) : varID * bit =
-     let f (h: varID) (l: exp) (r: exp) : varID * bit =
+    let evalCom (st: store ref) (_pData: progData) (c: command) : comVals =  
+     let f (h: varID) (l: exp) (r: exp) : comVals =
         match l, r with
         | Var(u), Var(v) ->
           let _ = begin assertValid h; assertValid u; assertValid v; end in
            let hStr = strOfId h in
-             let newValue = nand (varFind u !st) (varFind v !st) in
-               (st := VarMap.add hStr newValue !st); (h, newValue)
+             let lhsVal, rhsVal = varFind u !st, varFind v !st in
+               let newValue = nand lhsVal rhsVal in
+               { result = hStr; resultVal = newValue; 
+                 lhs = strOfId u; lhsVal = lhsVal; 
+                 rhs = strOfId v; rhsVal = rhsVal; 
+               } 
         | _ -> raise Invalid_command
      in mapOverCom f c
 
@@ -63,12 +67,16 @@ module NANDPP_back_end : PL_back_end =
       | _ -> raise Invalid_command
 
     (* straightforward evaluation of a command *)
-    let evalCom (st: store ref) (pData: progData) (c: command) : varID * bit =
-      let f (h: varID) (l: exp) (r: exp) : varID * bit =
+    let evalCom (st: store ref) (pData: progData) (c: command) : comVals =
+      let f (h: varID) (l: exp) (r: exp) : comVals =
         let u, v = evalExp l !st pData, evalExp r !st pData in
-          let id, newValue  = strOfId (extractId pData h), nand u v in
-           (st := (VarMap.add id  newValue !st)); h, newValue
-      in mapOverCom f c
+          let id = extractId pData h in 
+            let idStr, newValue  = strOfId id, nand u v in
+              { result = strOfId id; resultVal = newValue; 
+                lhs = strOfExp l; lhsVal = u; 
+                rhs = strOfExp r; rhsVal = v;
+              }   
+    in mapOverCom f c
 
    let endCondition (st: store): bool  =
      (safeFind "loop" st) = Zero (* ends program in case loop set to Zero *)

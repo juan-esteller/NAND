@@ -49,7 +49,7 @@ and exp =
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of fxnID * args * (exp list) (* expressions in list must be unary *)
-  | IsValid of index (* corresponds to validx_i *)
+  | IsValid of index (* corresponds to isvalidx_i *)
 
 exception Invalid_command
 exception Invalid_expression
@@ -64,7 +64,7 @@ let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a =
 let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
-  | IsValid(i) -> "isvalid_"^(strOfIndex i)
+  | IsValid(i) -> "isvalid"^(strOfIndex i)
   | _ -> raise Invalid_command
 
 (* ditto, for commands *)
@@ -97,12 +97,21 @@ type progData =
     n: int        (* length of x input *)
     }
 
+(* record for keeping track of result of evaluation of an expression *)
+type comVals = 
+  { result: string;
+    resultVal: bit; 
+    lhs: string;
+    lhsVal: bit; 
+    rhs: string; 
+    rhsVal: bit;  
+  } 
 
 module type PL_back_end = sig
   (* function that updates store & program data, raises
      an exception in the case that they are not supported, returns
      varID & its new value  *)
-  val evalCom : store ref -> progData -> command -> (varID * bit)
+  val evalCom : store ref -> progData -> command -> comVals 
 
   (* takes in a store, returns whether program terminates *)
   val endCondition: store -> bool
@@ -155,12 +164,11 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     let updateProgData (pData: progData) : unit =
        begin
           (if pData.i = 0 then
-            (pData.r <- pData.r + 1);
-            (pData.inc <- 1));
+            begin (pData.r <- pData.r + 1); (pData.inc <- 1) end);
           (if pData.i = pData.r then
             (pData.inc <- -1));
-            (pData.i <- pData.i + pData.inc);
-            (pData.pc <- pData.pc + 1);
+          (pData.i <- pData.i + pData.inc);
+          (pData.pc <- pData.pc + 1);
         end
 
     (* increments m if necessary *)
@@ -208,13 +216,16 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
-     let printCom (c: command) : unit =
-      (* command executes in line below *)
-      let id, b = Lang.evalCom st pData c in
-        let comStr = strOfCom c in
-          Printf.printf "Executing command \"%s\", %s assigned value %s\n"
-                        comStr (strOfId id) (stringOfBit b)
-      in begin validateCom c; printCom c; incM pData c; end
+     let res, comStr = Lang.evalCom st pData c, strOfCom c in 
+      let _ = (st := VarMap.add res.result res.resultVal !st) in
+        begin 
+         validateCom c; 
+         (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
+                       comStr res.lhs (stringOfBit res.lhsVal) 
+                              res.rhs (stringOfBit res.rhsVal) 
+                              res.result (stringOfBit res.resultVal));
+         incM pData c;
+        end
 
     (* evaluation of a program; will attempt to evaluate according
        to specification of Lang, raise an error in the case that
