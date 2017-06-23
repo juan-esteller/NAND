@@ -1,6 +1,6 @@
 %{
 open PL_functor;;
-
+ 
 let writeOnly = ["y"; "loop"]
 let readOnly = ["x"]
 
@@ -19,14 +19,19 @@ let checkWriteId (id: varID) : unit =
 
 /* Declaration of tokens */
 %token                                 EOF
-%token <PL_functor.varID>              ID
+%token <PL_functor.varID>              VAR_ID
 %token                                 NAND
 %token                                 ASG
 %token <PL_functor.index>              IS_VALID 
 %token                                 COMMA
+%token <PL_functor.bit>                CONST
+%token                                 LEFT_PAREN RIGHT_PAREN
+%token                                 LEFT_BRACK RIGHT_BRACK
+%token                                 DEF
+%token <PL_functor.funcID>             FUNC_ID
 
 /* Declarations of associativity */
-%left NAND
+%left NAND 
  
 %start parseProg
 %type <PL_functor.program> parseProg  
@@ -39,16 +44,21 @@ nandProg: nandCom nandProg {$1 :: $2}
 
 nandCom:
   | ids ASG exps {Asg($1, $3)}
-
+  | DEF ids ASG FUNC_ID LEFT_PAREN ids RIGHT_PAREN LEFT_BRACK nandProg RIGHT_BRACK  
+       { FxnDef($4, $2, $6, $9) }
 exps:
   | exp COMMA exps { $1 :: $3 }  
   | exp { [$1] }  
 
 exp: 
    | exp NAND exp { Nand($1, $3) } 
-   | ID { (checkReadId $1); Var($1) }
+   | VAR_ID { (checkReadId $1); Var($1) } 
    | IS_VALID { IsValid($1) }
- 
-ids: 
-  | ID {(checkWriteId $1);  [$1] }   
+   | CONST { Const($1) } 
+   | FUNC_ID LEFT_PAREN exps RIGHT_PAREN
+       { FxnApp($1, $3) }  
+ids:
+  | VAR_ID COMMA ids {(checkWriteId $1); $1 :: $3 } 
+  | VAR_ID {(checkWriteId $1);  [$1] }  
+   
 ;

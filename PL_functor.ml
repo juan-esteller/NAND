@@ -29,7 +29,7 @@ let strOfId (id: varID) : string =
 type args = varID list
 
 (* type for function ID's *)
-type fxnID = string
+type funcID = string
 
 type program =
   (* code is just a list of commands *)
@@ -43,12 +43,12 @@ and  command =
   | If of exp * program
   (* function definition; first varID list corresponds
      to output, varID list corresponds to input *)
-  | FxnDef of args * args * program
+  | FxnDef of funcID * args * args * program
 and exp =
   | Const of bit
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
-  | FxnApp of fxnID * args * (exp list) (* expressions in list must be unary *)
+  | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
   | IsValid of index (* corresponds to isvalidx_i *)
 
 exception Invalid_command
