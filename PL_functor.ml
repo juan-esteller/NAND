@@ -72,6 +72,7 @@ let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
   | IsValid(i) -> "isvalid"^(strOfIndex i)
+  | Const(b) -> if b = Zero then "zero" else "one" 
   | _ -> raise Invalid_command
 
 (* ditto, for commands *)
@@ -80,6 +81,11 @@ let strOfCom: command ->  string =
     (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r)
   in mapOverCom f
 
+(* function for converting valid run-time programs into strings *) 
+
+let strOfProg (p: program) : string = 
+  String.concat "\n" (List.map strOfCom p)
+ 
 (* module for mapping varIDs (= Strings) to their bit values *)
 module VarMap = Map.Make(String)
 
