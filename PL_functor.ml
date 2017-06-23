@@ -31,6 +31,7 @@ type args = varID list
 (* type for function ID's *)
 type funcID = string
 
+
 type program =
   (* code is just a list of commands *)
   command list
@@ -43,14 +44,20 @@ and  command =
   | If of exp * program
   (* function definition; first varID list corresponds
      to output, varID list corresponds to input *)
-  | FxnDef of funcID * args * args * program
+  | FxnDef of func
 and exp =
   | Const of bit
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
   | IsValid of index (* corresponds to isvalidx_i *)
-
+and func = { 
+    name: funcID; 
+    inputs: args;
+    outputs: args; 
+    body: program; 
+  }
+ 
 exception Invalid_command
 exception Invalid_expression
 
