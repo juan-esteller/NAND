@@ -37,9 +37,12 @@ let mapToProg (macro: command -> program) (p: program): program =
 let unzipCom (c: command) : program = 
   let pair (v: varID) (e: exp) : command = Asg([v], [e]) in 
     match c with 
+    (* leaves function applicatoins alone *) 
+    | Asg(_vars, [FxnApp(_id, _args)]) -> [c] 
+    (* otherwise assumes all expressions evaluate to a single value *) 
     | Asg(vars, exps) -> 
        List.map2 pair vars exps 
-    | _ -> [c]
+    | _ignore -> [c]
 
 let unzipProg (p: program) : program = 
   mapToProg unzipCom p
@@ -57,6 +60,61 @@ let enableAsgCom (c: command) : program =
 
 let enableAsgProg (p: program) : program = 
   mapToProg enableAsgCom p
+
+(* module for handling stores of functions *) 
+module FuncMap = Map.Make(String) 
+
+(* function store is a hashtable from function IDs to functions *) 
+type funcStore =  func FuncMap.t 
+
+let substProg (subsList: (varID * varID) list) (p: program) : program = 
+  let substId (id: varID) : varID = 
+    try 
+     List.assoc id subsList
+    with Not_found -> 
+     let body, ind = id in 
+       ("up"^body, ind) 
+  in let substExp (e: exp) : exp = 
+    match e with 
+    | Var(id) -> Var(substId id) 
+    | _ -> e
+  in let substCom (c: command) : command = 
+    match c with 
+    | Asg([h], [Nand(e1, e2)]) -> Asg([substId h], [Nand(substExp e1, substExp e2)]) 
+    | _ -> raise Invalid_command   
+  in List.map substCom p
+ 
+exception Invalid_input of exp 
+
+let strip (e: exp) : varID = 
+  match e with
+  | Var(id) -> id 
+  | _ -> raise (Invalid_input(e))
+  
+let expandFunc (ids: varID list) (args: exp list) (f: func): program = 
+  let zip = List.map2 (fun x y -> (x, y)) in 
+    let subsList = (zip f.outputs ids) @ (zip f.inputs (List.map strip args)) in 
+      substProg subsList f.body   
+
+exception Unbound_function of funcID 
+
+(* processes a line in a program with function definitions *) 
+let rec enableFuncCom (st: funcStore ref) (c: command) : program = 
+  match c with 
+  | FxnDef(fId, f) -> 
+     let curStore = !st in 
+       let newBody = mapToProg (enableFuncCom st) f.body in 
+         let newFun = {f with body = newBody} in 
+           (st := FuncMap.add fId newFun  curStore); [] 
+  | Asg(ids, [FxnApp(fId, args)]) -> 
+     (try 
+       expandFunc ids args (FuncMap.find fId !st)  
+      with Not_found -> raise (Unbound_function(fId))) 
+  | _ -> [c]
+
+let enableFuncProg (p: program) : program = 
+  let st = ref FuncMap.empty in
+    mapToProg (enableFuncCom st) p
 (* 
 let constProg = 
   "notx_0 := x_0 NAND x_0

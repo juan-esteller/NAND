@@ -44,7 +44,7 @@ and  command =
   | If of exp * program
   (* function definition; first varID list corresponds
      to output, varID list corresponds to input *)
-  | FxnDef of func
+  | FxnDef of funcID * func
 and exp =
   | Const of bit
   | Var of varID
@@ -52,7 +52,6 @@ and exp =
   | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
   | IsValid of index (* corresponds to isvalidx_i *)
 and func = { 
-    name: funcID; 
     inputs: args;
     outputs: args; 
     body: program; 

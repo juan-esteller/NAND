@@ -37,7 +37,7 @@
 let sym = ":=" | "NAND" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" 
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
-let funcId = ['A' - 'Z']['a' - 'z']*
+let funcId = ['A' - 'Z']+
 rule token = parse
   | [' ' '\t' '\n'] { token lexbuf } (* skip whitespace *)
   | "//" [^'\n']* '\n' { token lexbuf } (* skip one-line comments *)
