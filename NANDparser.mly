@@ -29,7 +29,7 @@ let checkWriteId (id: varID) : unit =
 %token                                 LEFT_BRACK RIGHT_BRACK
 %token                                 DEF
 %token <PL_functor.funcID>             FUNC_ID
-
+%token                                 IF 
 /* Declarations of associativity */
 %left NAND 
  
@@ -45,7 +45,9 @@ nandProg: nandCom nandProg {$1 :: $2}
 nandCom:
   | ids ASG exps {Asg($1, $3)}
   | DEF ids ASG FUNC_ID LEFT_PAREN ids RIGHT_PAREN LEFT_BRACK nandProg RIGHT_BRACK  
-       { FxnDef(($4, {inputs = $6; outputs = $2; body = $9 }))  }
+       { FxnDef(($4, {inputs = $6; outputs = $2; body = $9 })) }
+  | IF LEFT_PAREN exp RIGHT_PAREN LEFT_BRACK nandProg RIGHT_BRACK 
+       { If($3, $6) } 
 exps:
   | exp COMMA exps { $1 :: $3 }  
   | exp { [$1] }  

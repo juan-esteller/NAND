@@ -14,7 +14,8 @@
                           ("(", LEFT_PAREN); 
                           (")", RIGHT_PAREN); 
                           ("{", LEFT_BRACK); 
-                          ("}", RIGHT_BRACK);  
+                          ("}", RIGHT_BRACK);
+                          ("if", IF);   
                         ]
 
   (* conversion from string to index *) 
@@ -34,7 +35,7 @@
 
 }
 
-let sym = ":=" | "NAND" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" 
+let sym = ":=" | "NAND" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if"  
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
 let funcId = ['A' - 'Z']+
