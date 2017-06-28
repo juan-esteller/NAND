@@ -69,8 +69,8 @@ module FuncMap = Map.Make(String)
 (* function store is a hashtable from function IDs to functions *) 
 type funcStore =  func FuncMap.t 
 
-let substProg (subsList: (varID * varID) list) (p: program) : program = 
-  let substId (id: varID) : varID = 
+let substProg (outList: (varID * varID) list)  (argList: (varID * varID) list) (p: program) : program = 
+  let substId (subsList: (varID * varID) list) (id: varID) : varID = 
     try 
      List.assoc id subsList
     with Not_found -> 
@@ -78,11 +78,11 @@ let substProg (subsList: (varID * varID) list) (p: program) : program =
        ("up"^body, ind) 
   in let substExp (e: exp) : exp = 
     match e with 
-    | Var(id) -> Var(substId id) 
+    | Var(id) -> Var(substId (outList @ argList) id) 
     | _ -> e
   in let substCom (c: command) : command = 
     match c with 
-    | Asg([h], [Nand(e1, e2)]) -> Asg([substId h], [Nand(substExp e1, substExp e2)]) 
+    | Asg([h], [Nand(e1, e2)]) -> Asg([substId outList h], [Nand(substExp e1, substExp e2)]) 
     | _ -> raise Invalid_command   
   in List.map substCom p
  
@@ -95,17 +95,17 @@ let strip (e: exp) : varID =
   
 let expandFunc (ids: varID list) (args: exp list) (f: func): program = 
   let zip = List.map2 (fun x y -> (x, y)) in 
-    let subsList = (zip f.outputs ids) @ (zip f.inputs (List.map strip args)) in 
-      substProg subsList f.body   
+    let outList, argsList = (zip f.outputs ids), (zip f.inputs (List.map strip args)) in 
+      substProg outList argsList f.body   
 
 exception Unbound_function of funcID 
 
 (* processes a line in a program with function definitions *) 
-let rec enableFuncCom (otherMacros: program -> program) (st: funcStore ref) (c: command) : program = 
+let rec enableFuncCom  (st: funcStore ref) (c: command) : program = 
   match c with 
   | FxnDef(fId, f) -> 
      let curStore = !st in 
-       let newBody = mapToProg (enableFuncCom otherMacros  st) (otherMacros f.body) in 
+       let newBody = mapToProg (enableFuncCom st) f.body in 
          let newFun = {f with body = newBody} in 
            (st := FuncMap.add fId newFun  curStore); [] 
   | Asg(ids, [FxnApp(fId, args)]) -> 
@@ -115,14 +115,25 @@ let rec enableFuncCom (otherMacros: program -> program) (st: funcStore ref) (c: 
   | _ -> [c]
 
 
-let enableFuncProg (otherMacros: program -> program) (p: program) : program = 
-  let st, newP = ref FuncMap.empty, otherMacros p in
-    mapToProg (enableFuncCom otherMacros st) newP
+let enableFuncProg (p: program) : program = 
+  let st = ref FuncMap.empty in
+    mapToProg (enableFuncCom st) p 
 
 let enableMUX (b: varID) ((l, r):  (varID * varID)) : program = 
   let bStr, lStr, rStr = strOfId b, strOfId l, strOfId r in 
    let comStr = lStr^" := MUX("^bStr^", "^lStr^", "^rStr^")" in
      parseStr comStr 
+
+let expandMUX: program ->  program = 
+  let muxDefStr = 
+    "def a := MUX(z_0, z_1, z_2) { 
+     nz_0 := z_0 NAND z_0
+     u := z_1 NAND nz_0
+     v := z_2 NAND z_0
+     a := u NAND v
+     }"
+  in let muxDefProg = parseStr muxDefStr in 
+    fun (p: program) -> enableFuncProg (muxDefProg @ p)  
 
 let expandIf (e: exp) (p: program) : program =
   let handleCom (varSt: (varID * varID) list ref) (c: command) : command =
@@ -146,37 +157,36 @@ let expandIf (e: exp) (p: program) : program =
   in let varSt = ref [] in 
   let newProg = List.map (handleCom varSt) p in
     let b = strip e in  
-      newProg @ (List.concat (List.map (enableMUX b) !varSt))            
+      newProg @ (expandMUX (List.concat ((List.map (enableMUX b) (List.rev !varSt)))))            
 
-let rec enableIfProgHelp (p: program) : program = 
-  (Printf.printf "entering here!\n"); mapToProg enableIfCom p
+let rec enableIfProg (p: program) : program = 
+  mapToProg enableIfCom p
 and enableIfCom (c: command) : program = 
-  (Printf.printf "entering here too\n");
   match c with 
   | If(b, body) -> 
-      expandIf b (enableIfProgHelp body) 
+      expandIf b (enableIfProg body) 
   | FxnDef(fId, f) -> 
-      [FxnDef(fId, {f with body = enableIfProgHelp f.body})]  
+      [FxnDef(fId, {f with body = enableIfProg f.body})]  
   | _ -> [c] 
 
-let enableIfProg (p: program) : program = 
-  let muxDefStr = 
-    "def a := MUX(z_0, z_1, z_2) { 
-     nz_2 := z_2 NAND z_2
-     u := z_0 NAND nz_2
-     v := z_1 NAND z_2
-     a := u NAND v
-     }"
-  in (parseStr muxDefStr) @ (enableIfProgHelp p)  
-
 (* other macros to be applied to program, in order of their application *) 
-let otherMacroList = [unzipProg; enableAsgProg; enableIfProg] 
+let macroList = [unzipProg; enableAsgProg] 
+
+let rec enableNestedApp (m: program -> program) (p: program) = 
+  let p' = m p in 
+    let enterNestedProgs (c: command) : command = 
+      match c with 
+      | If(b, prog) -> If(b, enableNestedApp m prog) 
+      | FxnDef(id, f) -> FxnDef(id, {f with body = (enableNestedApp m f.body)}) 
+      | _ -> c 
+    in List.map enterNestedProgs p'
 
 let otherMacros = 
-  List.fold_left (fun acc f -> (fun p -> f (acc p))) (fun x -> x) otherMacroList 
+  List.fold_left (fun acc f -> (fun p -> f (acc p))) (fun x -> x) 
+                 (List.map enableNestedApp macroList) 
 
 let addSS (p: program) : program = 
-  enableFuncProg (fun p-> p) (enableIfProg p)  
+  enableIfProg p
 (* 
 let constProg = 
   "notx_0 := x_0 NAND x_0
