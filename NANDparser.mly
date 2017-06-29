@@ -58,7 +58,8 @@ exp:
    | IS_VALID { IsValid($1) }
    | CONST { Const($1) } 
    | FUNC_ID LEFT_PAREN exps RIGHT_PAREN
-       { FxnApp($1, $3) }  
+       { FxnApp($1, $3) } 
+   | LEFT_PAREN exp RIGHT_PAREN { $2 }  
 ids:
   | VAR_ID COMMA ids {(*(checkWriteId $1);*) $1 :: $3 } 
   | VAR_ID {(* checkWriteId $1 ;*)  [$1] }  

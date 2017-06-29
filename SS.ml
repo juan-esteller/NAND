@@ -49,15 +49,32 @@ let unzipCom (c: command) : program =
 let unzipProg (p: program) : program = 
   mapToProg unzipCom p
 
+let rec expandExp (e: exp) : program * exp = 
+  if isValue e then 
+    ([], e) 
+  else 
+    (match e with 
+     | Nand(e1, e2) -> 
+         let v = freshVar () in 
+           let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
+             (p1 @ (p2 @ [Asg([v], [Nand(e1', e2')])]), Var(v)) 
+     | _ -> ([], e)) 
+           
+      
+exception Impossible 
 (* enables direct assignment (i.e. a := b)  *) 
 let enableAsgCom (c: command) : program = 
   match c with 
   | Asg([u], [e]) -> 
-     if not (isValue e) then 
-      [c]
-     else let newVar, eStr =  freshVar (), strOfExp e in 
-       let newVarStr = strOfId newVar in 
-         (genLine newVar eStr eStr) @ (genLine u newVarStr newVarStr) 
+     if isValue e then 
+      let newVar, eStr =  freshVar (), strOfExp e in 
+        let newVarStr = strOfId newVar in 
+         (genLine newVar eStr eStr) @ (genLine u newVarStr newVarStr)
+     else (match e with 
+           | Nand(e1, e2) -> 
+              let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in 
+                p1 @ (p2 @ [Asg([u], [Nand(e1', e2')])]) 
+           | _ -> raise (Impossible))   
   | _ -> [c]
 
 let enableAsgProg (p: program) : program = 
@@ -186,7 +203,7 @@ let otherMacros =
                  (List.map enableNestedApp macroList) 
 
 let addSS (p: program) : program = 
-  enableIfProg p
+  enableAsgProg p
 (* 
 let constProg = 
   "notx_0 := x_0 NAND x_0
