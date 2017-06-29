@@ -74,6 +74,7 @@ let enableAsgCom (c: command) : program =
            | Nand(e1, e2) -> 
               let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in 
                 p1 @ (p2 @ [Asg([u], [Nand(e1', e2')])]) 
+           | FxnApp(_id, _args) -> [c]
            | _ -> raise (Impossible))   
   | _ -> [c]
 
@@ -121,6 +122,7 @@ exception Unbound_function of funcID
 let rec enableFuncCom  (st: funcStore ref) (c: command) : program = 
   match c with 
   | FxnDef(fId, f) -> 
+     let _ = Printf.printf "Found a function!\n" in 
      let curStore = !st in 
        let newBody = mapToProg (enableFuncCom st) f.body in 
          let newFun = {f with body = newBody} in 
@@ -203,7 +205,7 @@ let otherMacros =
                  (List.map enableNestedApp macroList) 
 
 let addSS (p: program) : program = 
-  enableAsgProg p
+  enableFuncProg (otherMacros p)  
 (* 
 let constProg = 
   "notx_0 := x_0 NAND x_0
