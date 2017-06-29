@@ -53,13 +53,15 @@ let rec expandExp (e: exp) : program * exp =
   if isValue e then 
     ([], e) 
   else 
-    (match e with 
-     | Nand(e1, e2) -> 
+    match e with 
+    | Nand(e1, e2) -> 
+        let v = freshVar () in 
+          let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
+            (p1 @ (p2 @ [Asg([v], [Nand(e1', e2')])]), Var(v)) 
+     | FxnApp(_id, _args) -> 
          let v = freshVar () in 
-           let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
-             (p1 @ (p2 @ [Asg([v], [Nand(e1', e2')])]), Var(v)) 
-     | _ -> ([], e)) 
-           
+           ([Asg([v], [e])], Var(v))  
+     | _ -> ([], e)          
       
 exception Impossible 
 (* enables direct assignment (i.e. a := b)  *) 
