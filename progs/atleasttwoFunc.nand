@@ -1,0 +1,19 @@
+// program using functions to calculate ATLEASTTWO 
+
+def a := NOT(b) { 
+  a := b NAND b
+} 
+
+def a :=  AND(b, c) {
+  a := NOT(b NAND c) 
+} 
+
+def a := OR(b, c) { 
+  a := NOT(b) NAND NOT(c) 
+} 
+
+def a := ATLEASTTWO(b, c, d) { 
+  a := OR(AND(b, c), OR(AND(b, d), AND(c, d)))
+}
+
+y_0 := ATLEASTTWO(x_0, x_1, x_2)  

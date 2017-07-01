@@ -1,0 +1,10 @@
+def a :=  NOT(b) { 
+  a := b NAND b
+}
+if(NOT(x_0)) {
+  if(NOT(x_0)) { 
+    if(NOT(x_0)) { 
+    y_0 := NOT(x_0)
+   } 
+  }   
+} 

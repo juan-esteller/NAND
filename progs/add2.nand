@@ -1,0 +1,32 @@
+// Add a pair of two-bit numbers
+// Input: (x_0,x_1) and (x_2,x_3)
+// Output: (y_0,y_1,y_2) representing the sum
+// x_0 + 2x_1 + x_2 + 2x_3
+//
+// Operation:
+// 1) y_0,c_1 := ADD_1(x_0,x_2):
+// add the least significant digits
+// c_1 is the "carry"
+u := x_0 NAND x_2
+v := x_0 NAND u
+w := x_2 NAND u
+y_0 := v NAND w
+c_1 := u NAND u
+// 2) z'_1,z_1 := ADD_1(x_1,x_3):
+// add second digits
+u := x_1 NAND x_3
+v := x_1 NAND u
+w := x_3 NAND u
+z_1 := v NAND w
+z'_1 := u NAND u
+// 3) Take care of carry:
+// 3a) y_1 = XOR(z_1,c_1)
+u := z_1 NAND c_1
+v := z_1 NAND u
+w := c_1 NAND u
+y_1 := v NAND w
+// 3b) y_2 = z'_1 OR (z_1 AND c_1)
+// = NAND(NOT(z'_1), NAND(z_1,c_1))
+u := z'_1 NAND z'_1
+v := z_1 NAND c_1
+y_2 := u NAND v

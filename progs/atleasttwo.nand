@@ -1,0 +1,7 @@
+// using no SS to calculate ATLEASTTWO 
+v_0 := x_0 NAND x_1 
+v_1 := x_0 NAND x_2 
+v_2 := x_1 NAND x_2 
+v_3 := v_2 NAND v_1
+notv_3 := v_3 NAND v_3 
+y_0 := notv_3 NAND v_0  
