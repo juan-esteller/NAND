@@ -22,7 +22,6 @@ let isValue (e: exp) : bool =
   match e with
   | Var(_x) -> true
   | Const(_x) -> true
-  | IsValid(_x) -> true
   | _ -> false
 
 (* maps a macro that maps a command to a sequence of commands to entire program *)

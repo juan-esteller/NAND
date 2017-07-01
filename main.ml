@@ -2,7 +2,7 @@ open PL_functor
 open PL_modules
 open SS
 
-module NAND = PLFromBackEnd(NAND_back_end)  
+module NAND = PLFromBackEnd(NANDPP_back_end)  
 exception Raise_program of program 
 let () =
   let _ =

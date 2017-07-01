@@ -1,6 +1,9 @@
 (* Type for bits  *)
 type bit = Zero | One
 
+let bitOfBool (b: bool) : bit = 
+  if b then One else Zero 
+
 let nand (l: bit) (r: bit) : bit = 
   match l, r with
   | One, One -> Zero
@@ -55,7 +58,6 @@ and exp =
   | Var of varID
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
-  | IsValid of index (* corresponds to isvalidx_i *)
 and func = {
     inputs: args;
     outputs: args;
@@ -75,7 +77,6 @@ let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a =
 let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
-  | IsValid(i) -> "isvalid"^(strOfIndex i)
   | Const(b) -> if b = Zero then "zero" else "one"
   | _ -> raise Invalid_command
 
@@ -158,7 +159,6 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
 
       (* returns output of a store as a binary string *)
     let stringOfStore (s: store) (m: int) : string =
-      let _ = Printf.printf "Value of m: %i\n" m in
       let rec helpEvalStore (s: store) (i: int) : string =
         let id = ("y", Int(i)) in
           if i < m then
@@ -207,11 +207,15 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     let evalExp (pData: progData) (st: store ref) (e: exp) : string * bit =
       match e with
       | Var(x) ->
-         let id = extractId pData x in
-           id, safeFind id !st
-      | IsValid(ind) ->
-          let id = "isvalid_"^(string_of_int (Lang.evalIndex pData ind)) in
-            id, safeFind id !st
+        let body, ind = x in 
+          if body = "validx" then
+            if not Lang.supportsLoop then 
+              raise Invalid_expression 
+            else 
+              let i = Lang.evalIndex pData ind in 
+                "validx"^"_"^(string_of_int i), bitOfBool (i < pData.n) 
+           else let id = extractId pData x in
+             id, safeFind id !st
       | _ -> raise Invalid_expression
 
     (* executes a command by updating store using Lang's function
@@ -248,7 +252,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
              List.iter (execCommand pData st) p;
              updateProgData pData;
              (*TODO: we'll eventually need to implement a time-out *)
-              (if  Lang.supportsLoop && ((safeFind "loop" !st) = Zero) then 
+              (if  Lang.supportsLoop && ((safeFind "loop" !st) = One) then 
                   evalLoop ());  
            end
       in let _ = evalLoop () in

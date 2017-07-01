@@ -48,7 +48,7 @@ rule token = parse
          let _ = checkIdBody word in  
           match word with 
           | "validx" -> if String.length primes = 0 then
-                          IS_VALID(iStr) 
+                          VAR_ID(word, iStr) 
                         else 
                           raise (Invalid_variableID("validx"^primes))  
           | _ -> VAR_ID((word^primes, iStr))   }
