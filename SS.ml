@@ -136,6 +136,10 @@ let rec enableFuncCom  (st: funcStore ref) (c: command) : program =
      (try
        expandFunc ids args (FuncMap.find fId !st)
       with Not_found -> raise (Unbound_function(fId)))
+  | If(b, body) -> 
+      let curStore = !st in 
+        let newBody = mapToProg (enableFuncCom st) body in 
+          (st := curStore); [If(b, newBody)] 
   | _ -> [c]
 
 
@@ -151,20 +155,20 @@ let enableNestedFuncCom (c: command) : program =
         (p @ accProg, e :: accArg)
       in let p, newArgs = List.fold_right processArg argList ([], [])  in
         p @ [Asg([id], [FxnApp(fId, newArgs)])]
-  | _ -> [c] 
+  | _ -> [c]
 
-let enableNestedFuncProg (p: program) : program = 
+let enableNestedFuncProg (p: program) : program =
   mapToProg enableNestedFuncCom p
 
-let enableNestedIfCom (c: command) : program = 
+let enableNestedIfCom (c: command) : program =
   match c with
-  | If(exp, prog) -> 
-      let p, id = expandExp exp in 
-        p @ [If(id, prog)] 
-  | _ -> [c] 
+  | If(exp, prog) ->
+      let p, id = expandExp exp in
+        p @ [If(id, prog)]
+  | _ -> [c]
 
-let enableNestedIfProg (p: program) : program = 
-  mapToProg enableNestedIfCom p 
+let enableNestedIfProg (p: program) : program =
+  mapToProg enableNestedIfCom p
 
 let enableMUX (b: varID) ((l, r):  (varID * varID)) : program =
   let bStr, lStr, rStr = strOfId b, strOfId l, strOfId r in
@@ -200,6 +204,15 @@ let expandIf (e: exp) (p: program) : program =
             let newId = freshVar () in
               (varSt := (h, newId) :: !varSt); newId)
         in Asg([newH], [Nand(substExp e1, substExp e2)])
+    | Asg([h], [FxnApp(id, args)]) -> 
+        let newH = 
+          (try 
+             List.assoc h !varSt 
+           with 
+           | Not_found -> 
+            let newId = freshVar () in 
+              (varSt := (h, newId) :: !varSt); newId)  
+        in Asg([newH], [FxnApp(id,  (List.map substExp args))]) 
     | _ -> raise (Invalid_command)
   in let varSt = ref [] in
   let newProg = List.map (handleCom varSt) p in
