@@ -1,6 +1,11 @@
 (* Type for bits  *)
 type bit = Zero | One
 
+let nand (l: bit) (r: bit) : bit = 
+  match l, r with
+  | One, One -> Zero
+  | _ -> One 
+
 (* indices into variables *)
 type index =
  | Int of int
@@ -19,10 +24,10 @@ let strOfIndex (i: index) : string =
 type varID = string * index
 
 let strOfId (id: varID) : string =
-  let (body, ind) = id in 
+  let (body, ind) = id in
     if body = "loop" then
-      "loop" 
-    else 
+      "loop"
+    else
       body^(strOfIndex ind)
 
 (* type for arguments + outputs of functions *)
@@ -51,12 +56,12 @@ and exp =
   | Nand of exp * exp (* expressions must be unary *)
   | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
   | IsValid of index (* corresponds to isvalidx_i *)
-and func = { 
+and func = {
     inputs: args;
-    outputs: args; 
-    body: program; 
+    outputs: args;
+    body: program;
   }
- 
+
 exception Invalid_command
 exception Invalid_expression
 
@@ -71,7 +76,7 @@ let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
   | IsValid(i) -> "isvalid"^(strOfIndex i)
-  | Const(b) -> if b = Zero then "zero" else "one" 
+  | Const(b) -> if b = Zero then "zero" else "one"
   | _ -> raise Invalid_command
 
 (* ditto, for commands *)
@@ -80,11 +85,11 @@ let strOfCom: command ->  string =
     (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r)
   in mapOverCom f
 
-(* function for converting valid run-time programs into strings *) 
+(* function for converting valid run-time programs into strings *)
 
-let strOfProg (p: program) : string = 
+let strOfProg (p: program) : string =
   String.concat "\n" (List.map strOfCom p)
- 
+
 (* module for mapping varIDs (= Strings) to their bit values *)
 module VarMap = Map.Make(String)
 
@@ -109,24 +114,14 @@ type progData =
     n: int        (* length of x input *)
     }
 
-(* record for keeping track of result of evaluation of an expression *)
-type comVals = 
-  { result: string;
-    resultVal: bit; 
-    lhs: string;
-    lhsVal: bit; 
-    rhs: string; 
-    rhsVal: bit;  
-  } 
-
 module type PL_back_end = sig
   (* function that updates store & program data, raises
      an exception in the case that they are not supported, returns
      varID & its new value  *)
-  val evalCom : store ref -> progData -> command -> comVals 
+  val evalIndex : progData -> index -> int
 
   (* takes in a store, returns whether program terminates *)
-  val endCondition: store -> bool
+  val supportsLoop: bool
 end
 
 
@@ -198,19 +193,45 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
        | Asg([h], _exp) ->
            (pData.m <- max pData.m (extractIndexVal h))
        | _ignore -> ()
+    
+    let extractId (pData: progData) (x: varID) : string =
+      let (body, ind) = x in
+        if body = "loop" then
+          if Lang.supportsLoop then
+            "loop"
+          else
+            raise Invalid_expression
+        else
+          body^"_"^(string_of_int (Lang.evalIndex pData ind))
+
+    let evalExp (pData: progData) (st: store ref) (e: exp) : string * bit =
+      match e with
+      | Var(x) ->
+         let id = extractId pData x in
+           id, safeFind id !st
+      | IsValid(ind) ->
+          let id = "isvalid_"^(string_of_int (Lang.evalIndex pData ind)) in
+            id, safeFind id !st
+      | _ -> raise Invalid_expression
 
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
-     let res, comStr = Lang.evalCom st pData c, strOfCom c in 
-      let _ = (st := VarMap.add res.result res.resultVal !st) in
-        begin 
+      let eval = evalExp pData st in
+      match c with
+      | Asg([id], [Nand(l, r)]) ->
+          let comStr = strOfCom c in 
+            let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
+              let resVal, resId = nand lhsVal rhsVal, extractId pData id in
+        begin
+         (st := VarMap.add resId resVal !st);
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
-                       comStr res.lhs (stringOfBit res.lhsVal) 
-                              res.rhs (stringOfBit res.rhsVal) 
-                              res.result (stringOfBit res.resultVal));
+                       comStr lhsId (stringOfBit lhsVal)
+                              rhsId (stringOfBit rhsVal)
+                              resId (stringOfBit resVal));
          incM pData c;
         end
+      | _ -> raise Invalid_command
 
     (* evaluation of a program; will attempt to evaluate according
        to specification of Lang, raise an error in the case that
@@ -227,7 +248,8 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
              List.iter (execCommand pData st) p;
              updateProgData pData;
              (*TODO: we'll eventually need to implement a time-out *)
-             (if not (Lang.endCondition !st) then evalLoop ());
+              (if  Lang.supportsLoop && ((safeFind "loop" !st) = Zero) then 
+                  evalLoop ());  
            end
       in let _ = evalLoop () in
            stringOfStore !st pData.m
