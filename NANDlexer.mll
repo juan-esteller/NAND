@@ -1,14 +1,16 @@
 { 
   open PL_functor 
+  open Binops
   open NANDparser
   let symTable =
     Hashtbl.create 30
 
+  let binops = List.map (fun (x, _y) -> (x, BINOP(x))) binopList 
+
   let _ = List.iter  (fun (kwd, tok) -> Hashtbl.add symTable kwd tok)
-                        [ (":=", ASG);
-                          ("NAND", NAND);
-                          ("zero", CONST(Zero)); 
-                          ("one", CONST(One));
+                       ([ (":=", ASG);
+                          ("zero", CONST(0)); 
+                          ("one", CONST(1));
                           ("def", DEF);
                           (",", COMMA);  
                           ("(", LEFT_PAREN); 
@@ -16,7 +18,7 @@
                           ("{", LEFT_BRACK); 
                           ("}", RIGHT_BRACK);
                           ("if", IF);   
-                        ]
+                        ] @ binops) 
 
   (* conversion from string to index *) 
   let indOfString (s : string) : index = 
@@ -35,7 +37,7 @@
 
 }
 
-let sym = ":=" | "NAND" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if"  
+let sym = ":=" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if" | "NAND" 
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
 let funcId = ['A' - 'Z']+

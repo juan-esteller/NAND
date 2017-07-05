@@ -1,5 +1,6 @@
 %{
 open PL_functor;;
+open Binops ;; 
  
 let writeOnly = ["y"; "loop"]
 let readOnly = ["x"]
@@ -20,17 +21,17 @@ let checkWriteId (id: varID) : unit =
 /* Declaration of tokens */
 %token                                 EOF
 %token <PL_functor.varID>              VAR_ID
-%token                                 NAND
+%token <Binops.binop>                  BINOP 
 %token                                 ASG
 %token                                 COMMA
-%token <PL_functor.bit>                CONST
+%token <int>                           CONST
 %token                                 LEFT_PAREN RIGHT_PAREN
 %token                                 LEFT_BRACK RIGHT_BRACK
 %token                                 DEF
 %token <PL_functor.funcID>             FUNC_ID
 %token                                 IF 
 /* Declarations of associativity */
-%left NAND 
+%left BINOP  
  
 %start parseProg
 %type <PL_functor.program> parseProg  
@@ -52,7 +53,7 @@ exps:
   | exp { [$1] }  
 
 exp: 
-   | exp NAND exp { Nand($1, $3) } 
+   | exp BINOP  exp { Binop($2, $1, $3) } 
    | VAR_ID { (*  (checkReadId $1); *)  Var($1) } 
    | CONST { Const($1) } 
    | FUNC_ID LEFT_PAREN exps RIGHT_PAREN

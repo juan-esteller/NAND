@@ -1,13 +1,4 @@
-(* Type for bits  *)
-type bit = Zero | One
-
-let bitOfBool (b: bool) : bit = 
-  if b then One else Zero 
-
-let nand (l: bit) (r: bit) : bit = 
-  match l, r with
-  | One, One -> Zero
-  | _ -> One 
+open Binops ;; 
 
 (* indices into variables *)
 type index =
@@ -39,7 +30,6 @@ type args = varID list
 (* type for function ID's *)
 type funcID = string
 
-
 type program =
   (* code is just a list of commands *)
   command list
@@ -54,9 +44,9 @@ and  command =
      to output, varID list corresponds to input *)
   | FxnDef of funcID * func
 and exp =
-  | Const of bit
+  | Const of int 
   | Var of varID
-  | Nand of exp * exp (* expressions must be unary *)
+  | Binop of binop * exp * exp 
   | FxnApp of funcID * (exp list) (* expressions in list must be unary *)
 and func = {
     inputs: args;
@@ -68,22 +58,22 @@ exception Invalid_command
 exception Invalid_expression
 
 (* utility function to apply mapping to valid run-time commands *)
-let mapOverCom (f: varID -> exp -> exp -> 'a) (c: command): 'a =
+let mapOverCom (f: binop -> varID -> exp -> exp -> 'a) (c: command): 'a =
   match c with
-  | Asg([h], [Nand(l, r)]) -> f h l r
+  | Asg([h], [Binop(b, l, r)]) -> f b h l r
   | _ -> raise Invalid_command
 
 (* converts valid run-time expressions to strings *)
 let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
-  | Const(b) -> if b = Zero then "zero" else "one"
+  | Const(b) -> if b = 0  then "zero" else "one"
   | _ -> raise Invalid_command
 
 (* ditto, for commands *)
 let strOfCom: command ->  string =
-  let f (h: varID) (l: exp) (r: exp) : string =
-    (strOfId h)^" := "^(strOfExp l)^" NAND "^(strOfExp r)
+  let f (b: binop) (h: varID) (l: exp) (r: exp) : string =
+    (strOfId h)^" := "^(strOfExp l)^" "^b^" "^(strOfExp r)
   in mapOverCom f
 
 (* function for converting valid run-time programs into strings *)
@@ -95,13 +85,13 @@ let strOfProg (p: program) : string =
 module VarMap = Map.Make(String)
 
 (* type for store of varID's values *)
-type store = bit VarMap.t
+type store = int VarMap.t
 
-let safeFind (str: string) (st: store) : bit =
-  try VarMap.find str st with Not_found -> Zero
+let safeFind (str: string) (st: store) : int =
+  try VarMap.find str st with Not_found -> 0 
 
 (* tries to find id in store, returns 0 if not found *)
-let varFind (id: varID) (st: store) : bit =
+let varFind (id: varID) (st: store) : int =
   safeFind (strOfId id) st
 
 
@@ -120,9 +110,8 @@ module type PL_back_end = sig
      an exception in the case that they are not supported, returns
      varID & its new value  *)
   val evalIndex : progData -> index -> int
-
-  (* takes in a store, returns whether program terminates *)
-  val supportsLoop: bool
+  val supportsBinop : binop -> bool 
+  val supportsLoop : bool
 end
 
 
@@ -133,21 +122,24 @@ module type PL_type = sig
 end
 
 exception Invalid_char of char
-
+exception Invalid_bit of int
+exception Invalid_binop of binop 
+ 
 module PLFromBackEnd (Lang : PL_back_end) : PL_type =
   struct
 
     (* converts a char to a bit *)
-    let bitOfChar (c: char) : bit =
+    let bitOfChar (c: char) : int =
       match c with
-      | '0' -> Zero
-      | '1' -> One
+      | '0' -> 0 
+      | '1' -> 1 
       | _invalid -> raise (Invalid_char c)
 
-    let stringOfBit (c: bit) : string =
+    let stringOfBit (c: int) : string =
       match c with
-      | Zero -> "0"
-      | One -> "1"
+      | 0  -> "0"
+      | 1 -> "1" 
+      | _ -> raise (Invalid_bit(c)) 
 
     (* creates initial store provided binary string *)
     let storeOfString (xVals: string) : store =
@@ -204,7 +196,10 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
         else
           body^"_"^(string_of_int (Lang.evalIndex pData ind))
 
-    let evalExp (pData: progData) (st: store ref) (e: exp) : string * bit =
+    let bitOfBool (b: bool) : int = 
+      if b then 1 else 0 
+   
+    let evalExp (pData: progData) (st: store ref) (e: exp) : string * int =
       match e with
       | Var(x) ->
         let body, ind = x in 
@@ -223,10 +218,14 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
       let eval = evalExp pData st in
       match c with
-      | Asg([id], [Nand(l, r)]) ->
-          let comStr = strOfCom c in 
-            let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
-              let resVal, resId = nand lhsVal rhsVal, extractId pData id in
+      | Asg([id], [Binop(b, l, r)]) ->
+          if not (Lang.supportsBinop b) then 
+             raise (Invalid_binop(b)) 
+          else 
+            let comStr = strOfCom c in 
+              let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
+                let binop = binopOfStr b in 
+                  let resVal, resId = binop lhsVal rhsVal, extractId pData id in
         begin
          (st := VarMap.add resId resVal !st);
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
@@ -252,7 +251,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
              List.iter (execCommand pData st) p;
              updateProgData pData;
              (*TODO: we'll eventually need to implement a time-out *)
-              (if  Lang.supportsLoop && ((safeFind "loop" !st) = One) then 
+              (if  Lang.supportsLoop && ((safeFind "loop" !st) = 1) then 
                   evalLoop ());  
            end
       in let _ = evalLoop () in
