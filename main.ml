@@ -1,5 +1,6 @@
 open PL_functor 
 open PL_modules
+open SS 
 
 module NAND = PLFromBackEnd(NANDPP_back_end)  
 exception Raise_program of program 
@@ -16,5 +17,6 @@ let () =
   let file = open_in fileName in
   let lexbuf = Lexing.from_channel file in
   let program = NANDparser.parseProg NANDlexer.token lexbuf in
+  let program = addSS program in 
   let output = NAND.execute program Sys.argv.(2) in
       Printf.printf "Output is %s\n" output

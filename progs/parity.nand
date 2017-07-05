@@ -1,22 +1,14 @@
-// a NAND++ program that calculates parity of input 
-
-def a := NOT(b) { 
-  a := b NAND b 
-} 
-
-// compute sum x_i (mod 2)
-// s = running parity
-// seen_i = 1 if this index has been seen before
 // Do val := (NOT seen_i) AND x_i
-tmp_2 := x_i NAND NOT(seen_i)  
-val := NOT(tmp_2)  
+tmp_1 := seen_i NAND seen_i
+tmp_2 := x_i NAND tmp_1
+val := tmp_2 NAND tmp_2
 // Do s := s XOR xal
-ns := NOT(s)  
+ns := s NAND s
 y_0 := ns NAND ns
 u := val NAND s
 v := s NAND u
 w := val NAND u
 s := v NAND w
 seen_i := z NAND z
-stop := NOT(validx_i)  
+stop := validx_i NAND validx_i
 loop := stop NAND stop

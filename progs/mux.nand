@@ -1,4 +1,8 @@
-notx_0 := x_0 NAND x_0
-u := notx_0 NAND x_1
-v := x_0 NAND x_2 
-y_0 := u NAND v 
+def a := MUX(b, c, d) { 
+notb := b NAND b
+u := notb NAND c
+v := b NAND d
+a := u NAND v 
+}
+
+y_0 := MUX(x_0, x_1, x_2) 

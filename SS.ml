@@ -53,10 +53,10 @@ let rec expandExp (e: exp) : program * exp =
     ([], e)
   else
     match e with
-    | Nand(e1, e2) ->
+    | Binop(b, e1, e2) ->
         let v = freshVar () in
           let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
-            (p1 @ (p2 @ [Asg([v], [Nand(e1', e2')])]), Var(v))
+            (p1 @ (p2 @ [Asg([v], [Binop(b, e1', e2')])]), Var(v))
      | FxnApp(id, args) ->
          let argList = List.map expandExp args in
              let processArg ((p, e): program * exp) ((accProg, accArg): program * (exp list)) : program * (exp list)  =
@@ -76,9 +76,9 @@ let enableAsgCom (c: command) : program =
         let newVarStr = strOfId newVar in
          (genLine newVar eStr eStr) @ (genLine u newVarStr newVarStr)
      else (match e with
-           | Nand(e1, e2) ->
+           | Binop(b, e1, e2) ->
               let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
-                p1 @ (p2 @ [Asg([u], [Nand(e1', e2')])])
+                p1 @ (p2 @ [Asg([u], [Binop(b, e1', e2')])])
            | FxnApp(_id, _args) -> [c]
            | _ -> raise (Impossible))
   | _ -> [c]
@@ -105,7 +105,7 @@ let substProg (outList: (varID * varID) list)  (argList: (varID * varID) list) (
     | _ -> e
   in let substCom (c: command) : command =
     match c with
-    | Asg([h], [Nand(e1, e2)]) -> Asg([substId outList h], [Nand(substExp e1, substExp e2)])
+    | Asg([h], [Binop(b, e1, e2)]) -> Asg([substId outList h], [Binop(b, substExp e1, substExp e2)])
     | _ -> raise Invalid_command
   in List.map substCom p
 
@@ -194,7 +194,7 @@ let expandIf (e: exp) (p: program) : program =
            Var(newId)
       | _ -> e
     in match c with
-    | Asg([h], [Nand(e1, e2)]) ->
+    | Asg([h], [Binop(b, e1, e2)]) ->
         let newH =
           (try
             List.assoc h !varSt
@@ -202,7 +202,7 @@ let expandIf (e: exp) (p: program) : program =
            | Not_found ->
             let newId = freshVar () in
               (varSt := (h, newId) :: !varSt); newId)
-        in Asg([newH], [Nand(substExp e1, substExp e2)])
+        in Asg([newH], [Binop(b, substExp e1, substExp e2)])
     | Asg([h], [FxnApp(id, args)]) -> 
         let newH = 
           (try 
