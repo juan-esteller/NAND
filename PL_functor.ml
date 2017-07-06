@@ -242,7 +242,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
             let comStr = strOfCom c in 
               let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
                 let binop = binopOfStr b in 
-                  let resVal, resId = binop lhsVal rhsVal, extractId !st id in
+                  let resVal, resId =binop lhsVal rhsVal, extractId !st id in
         begin
          (st := VarMap.add resId resVal !st);
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"

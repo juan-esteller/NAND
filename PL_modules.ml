@@ -37,4 +37,19 @@ module NANDPP_back_end : PL_back_end =
     let supportsLoop = true 
     
     let supportsI = false 
+end 
+
+
+module NANDGG_back_end : PL_back_end = 
+  struct 
+    let evalIndex (st: store) (ind: index) : int = 
+      match ind with 
+      | I -> safeFind "i" st
+      | Int(x) -> x 
+    let supportsBinop (b: binop) : bool = 
+      true 
+    
+    let supportsLoop = true 
+    
+    let supportsI = true
 end
