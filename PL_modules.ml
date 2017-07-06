@@ -10,7 +10,7 @@ module NAND_back_end : PL_back_end =
     (* exception for indidces that aren't integral *)
     exception Invalid_index
 
-    let evalIndex (pData: progData) (ind: index) : int = 
+    let evalIndex (st: store) (ind: index) : int = 
       match ind with 
       | Int(x) -> x 
       | _ -> raise Invalid_index
@@ -20,17 +20,21 @@ module NAND_back_end : PL_back_end =
 
     (* always finishes after one iteration *)
     let supportsLoop = false 
+    
+    let supportsI = false
 end
 
 module NANDPP_back_end : PL_back_end =
   struct
-    let evalIndex (pData: progData) (ind: index) : int =
+    let evalIndex (st: store) (ind: index) : int =
       match ind with
-      | I -> pData.i
+      | I -> safeFind "i" st 
       | Int(x) -> x
      
     let supportsBinop (b: binop) : bool = 
       b = "NAND" 
  
     let supportsLoop = true 
+    
+    let supportsI = false 
 end

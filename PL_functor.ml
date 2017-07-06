@@ -19,8 +19,8 @@ type varID = string * index
 
 let strOfId (id: varID) : string =
   let (body, ind) = id in
-    if body = "loop" then
-      "loop"
+    if body = "loop" || body = "i" then
+      body 
     else
       body^(strOfIndex ind)
 
@@ -109,9 +109,10 @@ module type PL_back_end = sig
   (* function that updates store & program data, raises
      an exception in the case that they are not supported, returns
      varID & its new value  *)
-  val evalIndex : progData -> index -> int
+  val evalIndex : store -> index -> int
   val supportsBinop : binop -> bool 
   val supportsLoop : bool
+  val supportsI : bool 
 end
 
 
@@ -160,7 +161,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     in helpEvalStore s 0
 
     (* helper function that updates pData at end of an iteration *)
-    let updateProgData (pData: progData) : unit =
+    let updateProgData (pData: progData) (st: store ref) : unit =
        begin
           (if pData.i = 0 then
             begin (pData.r <- pData.r + 1); (pData.inc <- 1) end);
@@ -168,6 +169,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
             (pData.inc <- -1));
           (pData.i <- pData.i + pData.inc);
           (pData.pc <- pData.pc + 1);
+          (st := VarMap.add "i" pData.i !st);
         end
 
     (* increments m if necessary *)
@@ -186,15 +188,21 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
            (pData.m <- max pData.m (extractIndexVal h))
        | _ignore -> ()
     
-    let extractId (pData: progData) (x: varID) : string =
+    let extractId (st: store)  (x: varID) : string =
       let (body, ind) = x in
-        if body = "loop" then
-          if Lang.supportsLoop then
-            "loop"
-          else
-            raise Invalid_expression
-        else
-          body^"_"^(string_of_int (Lang.evalIndex pData ind))
+        match body with 
+        | "i" -> 
+            if Lang.supportsI then 
+               "i" 
+            else 
+              raise Invalid_expression
+        | "loop" -> 
+             if Lang.supportsLoop then 
+                 "loop" 
+             else 
+                raise Invalid_expression
+        | _ -> 
+           body^"_"^(string_of_int (Lang.evalIndex st ind))
 
     let bitOfBool (b: bool) : int = 
       if b then 1 else 0 
@@ -202,30 +210,39 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     let evalExp (pData: progData) (st: store ref) (e: exp) : string * int =
       match e with
       | Var(x) ->
-        let body, ind = x in 
-          if body = "validx" then
+        let body, ind = x in
+          if body = "validx" then  
             if not Lang.supportsLoop then 
-              raise Invalid_expression 
+                raise Invalid_expression 
             else 
-              let i = Lang.evalIndex pData ind in 
+              let i = Lang.evalIndex !st ind in 
                 "validx"^"_"^(string_of_int i), bitOfBool (i < pData.n) 
-           else let id = extractId pData x in
+           else let id = extractId !st x in
              id, safeFind id !st
       | _ -> raise Invalid_expression
-
+    
+    let checkId (id: varID) : unit = 
+      let body, ind = id in 
+        match body with 
+        | "validx" -> raise (Invalid_expression)
+        | "i" -> (if not Lang.supportsI then 
+                   raise Invalid_expression)
+        | _ -> () 
+   
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
       let eval = evalExp pData st in
       match c with
       | Asg([id], [Binop(b, l, r)]) ->
+          let _ = checkId id in 
           if not (Lang.supportsBinop b) then 
              raise (Invalid_binop(b)) 
           else 
             let comStr = strOfCom c in 
               let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
                 let binop = binopOfStr b in 
-                  let resVal, resId = binop lhsVal rhsVal, extractId pData id in
+                  let resVal, resId = binop lhsVal rhsVal, extractId !st id in
         begin
          (st := VarMap.add resId resVal !st);
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
@@ -249,7 +266,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
       in let rec evalLoop ((): unit) : unit =
            begin
              List.iter (execCommand pData st) p;
-             updateProgData pData;
+             updateProgData pData st;
              (*TODO: we'll eventually need to implement a time-out *)
               (if  Lang.supportsLoop && ((safeFind "loop" !st) = 1) then 
                   evalLoop ());  
