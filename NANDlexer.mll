@@ -37,7 +37,7 @@
 
 }
 
-let sym = ":=" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if" | "NAND" | "+"  
+let sym = ":=" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if" | "NAND" | "+" | "=="  
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
 let funcId = ['A' - 'Z']+

@@ -29,7 +29,7 @@ module NAND_back_end : PL_back_end =
       "def a := MUX(b, c, d) { 
          nb := b NAND b
          u := c NAND nb 
-         v := d NAND c 
+         v := d NAND b 
          a := u NAND v 
        }" 
 end
@@ -54,7 +54,7 @@ module NANDPP_back_end : PL_back_end =
       "def a := MUX(b, c, d) { 
          nb := b NAND b
          u := c NAND nb 
-         v := d NAND c 
+         v := d NAND b 
          a := u NAND v 
        }" 
 end 
@@ -76,12 +76,13 @@ module NANDGG_back_end : PL_back_end =
     let supportsAsg = true 
     
     let muxDefStr = 
-      "def a := MUX(b, c, d) { 
+       "def a := MUX(b, c, d) { 
          tmp_0 := c 
          tmp_1 := d
-         tmp_2 := i 
+         temp_0 := i 
          i := b 
-         a := tmp_i  
-         i := tmp_2 
-       }" 
+         res := tmp_i 
+         i := temp_0 
+         a := res  
+       }"   
 end

@@ -3,8 +3,8 @@ def a :=  NOT(b) {
 }
 if(NOT(x_0)) {
   if(NOT(x_0)) { 
-    if(NOT(x_0)) { 
     y_0 := NOT(x_0)
-   } 
-  }   
+    y_0 := y_0 
+    y_1 := y_0 NAND y_0 
+  } 
 } 

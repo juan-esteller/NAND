@@ -174,13 +174,13 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
         end
 
     (* increments m if necessary *)
-    let incM (pData: progData) (c: command) : unit =
-      let extractIndexVal (id : varID) : int =
+    let incM (pData: progData)  (c: command) (st: store) : unit =
+     let extractIndexVal (id : varID) : int =
         let (body, ind) = id  in
           match body with
-          | "y" -> (match ind  with
-                    | I -> pData.i
-                    | Int(x) -> x + 1)
+          | "y" ->  (match ind  with
+                    | I -> (safeFind "i" st)  + 1
+                    | Int(x) -> x + 1) 
           | _noty -> -1 (* won't cause any increase in m *)
     in match c with
         (* all commands that update m will be of this form
@@ -250,7 +250,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
                        comStr lhsId (string_of_int  lhsVal)
                               rhsId (string_of_int  rhsVal)
                               resId (string_of_int  resVal));
-         incM pData c;
+         incM pData c !st;
         end
       | Asg([id1], [Var(id2)]) -> 
          if not Lang.supportsAsg then 
@@ -264,7 +264,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
             (Printf.printf "Executing command \"%s\", %s has value %s, %s assigned value %s\n"
                comStr id2Str (string_of_int resVal)  
                       resId  (string_of_int resVal)); 
-            incM pData c; 
+            incM pData c !st; 
           end   
        | _ -> raise Invalid_command 
 
