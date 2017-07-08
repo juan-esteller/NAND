@@ -196,20 +196,6 @@ let expandMUX: program ->  program =
 
 exception Internal_error
 
-let expandMUXStore (p: program) (b: varID) (varSt : (varID * varID) list ref) : program = 
-  let handleCom (c: command) : program = 
-    match c with 
-    | Asg([id], _exp) -> 
-       let body, ind = id in 
-         if body = "i" then 
-              [c] 
-         else 
-           (match !varSt with 
-            | h::t -> (varSt := t); enableMUX b h
-            | _ -> raise Internal_error) 
-    | _ -> raise Invalid_command  
-  in  expandMUX (List.concat (List.map handleCom p))   
-
 let restoreIProg (v: varID) (b: varID) : program = 
     let varStr, bStr = strOfId v, strOfId b in 
       let progStr = 
@@ -220,48 +206,24 @@ let restoreIProg (v: varID) (b: varID) : program =
       in parseStr progStr    
 
 let expandIf (e: exp) (p: program) : program =
-  let handleCom (varSt: (varID * varID) list ref) (c: command) : command =
-    let substExp (e: exp) : exp =
-      match e with
-      | Var(id) ->
-         let newId = (try List.assoc id !varSt with Not_found -> id) in
-           Var(newId)
-      | _ -> e
-    in let updateH (h: varID) : varID = 
-       if h = ("i", Int(0)) then 
-          h 
-       else    
-      (*  (try
-            List.assoc h !varSt
-        with
-        | Not_found -> *)  
-            let newId = freshVar () in
-              (varSt := (h, newId) :: !varSt); newId
-    in match c with
-    | Asg([h], [Binop(b, e1, e2)]) ->
-        let e1', e2' = substExp e1, substExp e2 in 
-          let newH = updateH h in 
-            Asg([newH], [Binop(b, e1', e2')])
-    | Asg([h], [FxnApp(id, args)]) -> 
-       let args' = List.map substExp args in   
-         let newH = updateH h in  
-           Asg([newH], [FxnApp(id,  args')]) 
-    | Asg([h], [Var(id)]) ->
-        let e' = substExp (Var(id)) in  
-          let newH = updateH h in  
-            Asg([newH], [e'])
+  let handleCom (b: varID) (c: command) : program =
+    match c with
+    | Asg([h], [e])->
+        if h = ("i", Int(0)) then 
+            [c]   
+        else let newH = freshVar () in 
+            [Asg([newH], [e])] @ (enableMUX b (h, newH))  
     | _ -> raise (Invalid_command)
-  in let varSt = ref [] in
-  let newProg = List.map (handleCom varSt) p in
-    let b = strip e in
-     let origLine, initI, endLine= 
+  in let b = strip e in
+      let newProg = List.concat (List.map (handleCom b) p)  in
+        let origLine, endLine= 
        if not Lang.supportsAsg then 
-          [], [], []  
+          [], []
        else 
           let temp = freshVar () in
              let tempStr, bStr = strOfId temp, strOfId b in 
-               parseStr (tempStr^":= i"), parseStr ("i :="^tempStr), restoreIProg temp b  
-      in origLine @ newProg @ initI @ (expandMUXStore p b (ref (List.rev !varSt))) @ endLine
+               parseStr (tempStr^":= i"), restoreIProg temp b  
+      in origLine @ (expandMUX newProg) @ endLine
 
 let rec enableIfProg (p: program) : program =
   mapToProg enableIfCom p
