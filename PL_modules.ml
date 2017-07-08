@@ -22,6 +22,16 @@ module NAND_back_end : PL_back_end =
     let supportsLoop = false 
     
     let supportsI = false
+    
+    let supportsAsg = false
+    
+    let muxDefStr = 
+      "def a := MUX(b, c, d) { 
+         nb := b NAND b
+         u := c NAND nb 
+         v := d NAND c 
+         a := u NAND v 
+       }" 
 end
 
 module NANDPP_back_end : PL_back_end =
@@ -37,6 +47,16 @@ module NANDPP_back_end : PL_back_end =
     let supportsLoop = true 
     
     let supportsI = false 
+    
+    let supportsAsg = false
+    
+    let muxDefStr = 
+      "def a := MUX(b, c, d) { 
+         nb := b NAND b
+         u := c NAND nb 
+         v := d NAND c 
+         a := u NAND v 
+       }" 
 end 
 
 
@@ -52,4 +72,16 @@ module NANDGG_back_end : PL_back_end =
     let supportsLoop = true 
     
     let supportsI = true
+   
+    let supportsAsg = true 
+    
+    let muxDefStr = 
+      "def a := MUX(b, c, d) { 
+         tmp_0 := c 
+         tmp_1 := d
+         tmp_2 := i 
+         i := b 
+         a := tmp_i  
+         i := tmp_2 
+       }" 
 end

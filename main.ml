@@ -3,7 +3,7 @@ open PL_modules
 open SS 
 
 module NAND = PLFromBackEnd(NANDGG_back_end)  
-exception Raise_program of program 
+module SS_lang = SSFromBackEnd(NANDGG_back_end) 
 let () =
   let _ =
     if Array.length Sys.argv <> 3 then
@@ -17,6 +17,6 @@ let () =
   let file = open_in fileName in
   let lexbuf = Lexing.from_channel file in
   let program = NANDparser.parseProg NANDlexer.token lexbuf in
-  let program = addSS program in 
+  let program = SS_lang.addSS program in 
   let output = NAND.execute program Sys.argv.(2) in
       Printf.printf "Output is %s\n" output

@@ -32,7 +32,14 @@ let mapToProg (macro: command -> program) (p: program): program =
 
 (* END OF HELPER FUNCTIONS *)
 
+module type SS_module = sig
+  val addSS : program -> program 
+end 
+
 (* START OF MACROS, in order of increasing complexity *)
+module SSFromBackEnd (Lang: PL_back_end) : SS_module = 
+struct 
+
 
 (* macro to expand list of assignments to lines *)
 let unzipCom (c: command) : program =
@@ -71,7 +78,7 @@ exception Impossible
 let enableAsgCom (c: command) : program =
   match c with
   | Asg([u], [e]) ->
-     if isValue e then
+     if isValue e && not Lang.supportsAsg then
       let newVar, eStr =  freshVar (), strOfExp e in
         let newVarStr = strOfId newVar in
          (genLine newVar eStr eStr) @ (genLine u newVarStr newVarStr)
@@ -80,7 +87,7 @@ let enableAsgCom (c: command) : program =
               let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
                 p1 @ (p2 @ [Asg([u], [Binop(b, e1', e2')])])
            | FxnApp(_id, _args) -> [c]
-           | _ -> raise (Impossible))
+           | _ -> [c])  
   | _ -> [c]
 
 let enableAsgProg (p: program) : program =
@@ -98,14 +105,23 @@ let substProg (outList: (varID * varID) list)  (argList: (varID * varID) list) (
      List.assoc id subsList
     with Not_found ->
      let body, ind = id in
-       ("up"^body, ind)
+       if body = "i" then 
+          id 
+       else 
+         ("up"^body, ind)
   in let substExp (e: exp) : exp =
     match e with
-    | Var(id) -> Var(substId (outList @ argList) id)
+    | Var(id) -> 
+       let body, _ind = id in 
+         if body = "i" && Lang.supportsI then 
+           Var(id) 
+         else 
+           Var(substId (outList @ argList) id)
     | _ -> e
   in let substCom (c: command) : command =
     match c with
     | Asg([h], [Binop(b, e1, e2)]) -> Asg([substId outList h], [Binop(b, substExp e1, substExp e2)])
+    | Asg([h], [Var(id)]) -> Asg([substId outList h], [substExp (Var(id))])
     | _ -> raise Invalid_command
   in List.map substCom p
 
@@ -175,14 +191,7 @@ let enableMUX (b: varID) ((l, r):  (varID * varID)) : program =
      parseStr comStr
 
 let expandMUX: program ->  program =
-  let muxDefStr =
-    "def a := MUX(z_0, z_1, z_2) {
-     nz_0 := z_0 NAND z_0
-     u := z_1 NAND nz_0
-     v := z_2 NAND z_0
-     a := u NAND v
-     }"
-  in let muxDefProg = parseStr muxDefStr in
+  let muxDefProg = parseStr Lang.muxDefStr in
     fun (p: program) -> enableFuncProg (muxDefProg @ p)
 
 let expandIf (e: exp) (p: program) : program =
@@ -212,6 +221,15 @@ let expandIf (e: exp) (p: program) : program =
             let newId = freshVar () in 
               (varSt := (h, newId) :: !varSt); newId)  
         in Asg([newH], [FxnApp(id,  (List.map substExp args))]) 
+    | Asg([h], [Var(id)]) -> 
+        let newH = 
+         (try 
+           List.assoc h !varSt 
+          with 
+          | Not_found -> 
+           let newId = freshVar () in 
+             (varSt := (h, newId) :: !varSt); newId) 
+        in Asg([newH], [substExp (Var(id))])
     | _ -> raise (Invalid_command)
   in let varSt = ref [] in
   let newProg = List.map (handleCom varSt) p in
@@ -245,7 +263,9 @@ let otherMacros =
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  enableFuncProg (enableIfProg (otherMacros p))
+  enableFuncProg (enableIfProg (otherMacros p))  
+
+end 
 (*
 let constProg =
   "notx_0 := x_0 NAND x_0

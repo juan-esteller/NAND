@@ -1,1 +1,1 @@
-loop := x_i NAND x_i
+loop := o NAND o

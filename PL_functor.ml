@@ -58,9 +58,10 @@ exception Invalid_command
 exception Invalid_expression
 
 (* utility function to apply mapping to valid run-time commands *)
-let mapOverCom (f: binop -> varID -> exp -> exp -> 'a) (c: command): 'a =
+let mapOverCom (f: binop option -> varID -> exp -> exp option -> 'a) (c: command): 'a =
   match c with
-  | Asg([h], [Binop(b, l, r)]) -> f b h l r
+  | Asg([h], [Binop(b, l, r)]) -> f (Some b) h l (Some r)
+  | Asg([h], [Var(id)]) ->  f None h (Var(id)) None 
   | _ -> raise Invalid_command
 
 (* converts valid run-time expressions to strings *)
@@ -72,8 +73,11 @@ let strOfExp (e: exp) : string =
 
 (* ditto, for commands *)
 let strOfCom: command ->  string =
-  let f (b: binop) (h: varID) (l: exp) (r: exp) : string =
-    (strOfId h)^" := "^(strOfExp l)^" "^b^" "^(strOfExp r)
+  let f (b: binop option) (h: varID) (l: exp) (r: exp option) : string =
+    match b, r with 
+    | Some b, Some r -> (strOfId h)^" := "^(strOfExp l)^" "^b^" "^(strOfExp r)
+    | None, None -> (strOfId h)^" := "^(strOfExp l) 
+    | _ -> raise Invalid_command
   in mapOverCom f
 
 (* function for converting valid run-time programs into strings *)
@@ -113,6 +117,8 @@ module type PL_back_end = sig
   val supportsBinop : binop -> bool 
   val supportsLoop : bool
   val supportsI : bool 
+  val supportsAsg : bool
+  val muxDefStr : string 
 end
 
 
@@ -136,12 +142,6 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
       | '1' -> 1 
       | _invalid -> raise (Invalid_char c)
 
-    let stringOfBit (c: int) : string =
-      match c with
-      | 0  -> "0"
-      | 1 -> "1" 
-      | _ -> raise (Invalid_bit(c)) 
-
     (* creates initial store provided binary string *)
     let storeOfString (xVals: string) : store =
       let s = ref VarMap.empty in
@@ -152,10 +152,11 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
 
       (* returns output of a store as a binary string *)
     let stringOfStore (s: store) (m: int) : string =
+      let _ = Printf.printf "Value of m is %i\n" m in 
       let rec helpEvalStore (s: store) (i: int) : string =
         let id = ("y", Int(i)) in
           if i < m then
-            (stringOfBit (varFind id s))^(helpEvalStore s (i + 1))
+            (string_of_int (varFind id s))^(helpEvalStore s (i + 1))
           else
             ""
     in helpEvalStore s 0
@@ -246,12 +247,26 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
         begin
          (st := VarMap.add resId resVal !st);
          (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
-                       comStr lhsId (stringOfBit lhsVal)
-                              rhsId (stringOfBit rhsVal)
-                              resId (stringOfBit resVal));
+                       comStr lhsId (string_of_int  lhsVal)
+                              rhsId (string_of_int  rhsVal)
+                              resId (string_of_int  resVal));
          incM pData c;
         end
-      | _ -> raise Invalid_command
+      | Asg([id1], [Var(id2)]) -> 
+         if not Lang.supportsAsg then 
+           raise Invalid_command
+         else 
+          let comStr = strOfCom c in 
+            let id2Str, resVal = eval (Var(id2)) in
+              let resId = extractId !st id1 in  
+          begin 
+            (st := VarMap.add resId resVal !st); 
+            (Printf.printf "Executing command \"%s\", %s has value %s, %s assigned value %s\n"
+               comStr id2Str (string_of_int resVal)  
+                      resId  (string_of_int resVal)); 
+            incM pData c; 
+          end   
+       | _ -> raise Invalid_command 
 
     (* evaluation of a program; will attempt to evaluate according
        to specification of Lang, raise an error in the case that
