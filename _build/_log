@@ -1,0 +1,46 @@
+### Starting build.
+# Target: main.ml.depends, tags: { extension:ml, file:main.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules main.ml > main.ml.depends
+# Target: NANDlexer.mll, tags: { extension:mll, file:NANDlexer.mll, lexer, ocaml, ocamllex, quiet }
+/usr/bin/ocamllex -q NANDlexer.mll
+# Target: NANDlexer.ml.depends, tags: { extension:ml, file:NANDlexer.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules NANDlexer.ml > NANDlexer.ml.depends
+# Target: NANDparser.mly, tags: { extension:mly, file:NANDparser.mly, infer, ocaml, ocamlyacc, parser, quiet }
+/usr/bin/ocamlyacc NANDparser.mly
+# Target: NANDparser.mli.depends, tags: { extension:mli, file:NANDparser.mli, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules NANDparser.mli > NANDparser.mli.depends
+# Target: PL_functor.ml.depends, tags: { extension:ml, file:PL_functor.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules PL_functor.ml > PL_functor.ml.depends
+# Target: PL_functor.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:PL_functor.cmo, file:PL_functor.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -o PL_functor.cmo PL_functor.ml
+# Target: NANDparser.cmi, tags: { byte, compile, extension:mli, file:NANDparser.mli, interf, ocaml, quiet }
+/usr/bin/ocamlc -c -o NANDparser.cmi NANDparser.mli
+# Target: PL_modules.ml.depends, tags: { extension:ml, file:PL_modules.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules PL_modules.ml > PL_modules.ml.depends
+# Target: SS.ml.depends, tags: { extension:ml, file:SS.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules SS.ml > SS.ml.depends
+# Target: NANDlexer.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:NANDlexer.cmo, file:NANDlexer.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -o NANDlexer.cmo NANDlexer.ml
+# Target: PL_modules.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:PL_modules.cmo, file:PL_modules.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -o PL_modules.cmo PL_modules.ml
+# Target: SS.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:SS.cmo, file:SS.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -o SS.cmo SS.ml
+# Target: main.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -o main.cmo main.ml
+# Target: NANDparser.ml.depends, tags: { extension:ml, file:NANDparser.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules NANDparser.ml > NANDparser.ml.depends
+# Target: PL_functor.cmx, tags: { compile, extension:cmx, extension:ml, file:PL_functor.cmx, file:PL_functor.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o PL_functor.cmx PL_functor.ml
+# Target: NANDparser.cmx, tags: { compile, extension:cmx, extension:ml, file:NANDparser.cmx, file:NANDparser.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o NANDparser.cmx NANDparser.ml
+# Target: NANDlexer.cmx, tags: { compile, extension:cmx, extension:ml, file:NANDlexer.cmx, file:NANDlexer.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o NANDlexer.cmx NANDlexer.ml
+# Target: PL_modules.cmx, tags: { compile, extension:cmx, extension:ml, file:PL_modules.cmx, file:PL_modules.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o PL_modules.cmx PL_modules.ml
+# Target: SS.cmx, tags: { compile, extension:cmx, extension:ml, file:SS.cmx, file:SS.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o SS.cmx SS.ml
+# Target: main.cmx, tags: { compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -o main.cmx main.ml
+# Target: main.native, tags: { dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet }
+/usr/bin/ocamlopt PL_functor.cmx NANDparser.cmx NANDlexer.cmx PL_modules.cmx SS.cmx main.cmx -o main.native
+# Compilation successful.
