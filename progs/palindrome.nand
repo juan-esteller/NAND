@@ -1,0 +1,40 @@
+// A sample NAND<< program that computes the language of palindromes 
+def a := NOT(b) {
+  a := b NAND b 
+}
+o := NOT(z)
+two := o + o 
+if(NOT(seen_0)) { 
+  cur := z 
+  seen_0 := o 
+} 
+i := cur
+if(validx_i) { 
+ cur := cur + o  
+ loop := o 
+}
+if(NOT(validx_i)) { 
+  computedlength := o 
+}
+if(computedlength) { 
+  if(justentered) { 
+    justentered := o 
+    iter := z 
+  } 
+  i := iter 
+  left := x_i
+  i := (cur - iter) - o
+  right := x_i
+  if(NOT(left == right)) {   
+    loop := z 
+    y_0 := z 
+  } 
+  halflength := cur / two
+  if(NOT(iter < halflength)) { 
+   y_0 := o 
+   loop := z 
+  }  
+  iter := iter + o  
+}
+
+  

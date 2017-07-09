@@ -14,8 +14,6 @@ let binopList =
   ("+", (+)); 
   ("-", (-));
   ("/", (/)); 
-  ("LPROJ", (fun x y -> x)); 
-  ("RPROJ", (fun x y -> y)); 
   ("==", makeReturnBit (=)); 
   ("<", makeReturnBit (<)); 
   (">", makeReturnBit (>));]
