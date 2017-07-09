@@ -99,31 +99,31 @@ module FuncMap = Map.Make(String)
 (* function store is a hashtable from function IDs to functions *)
 type funcStore =  func FuncMap.t
 
-let substProg (outList: (varID * varID) list)  (argList: (varID * varID) list) (p: program) : program =
+let substProg (outList: (varID * varID) list) (argList: (varID * varID) list) (p: program) : program =
   let substId (subsList: (varID * varID) list) (id: varID) : varID =
     try
-     List.assoc id subsList
+      List.assoc id subsList
     with Not_found ->
-     let body, ind = id in
-       if body = "i" then 
-          id 
-       else 
-         ("up"^body, ind)
-  in let substExp (e: exp) : exp =
-    match e with
-    | Var(id) -> 
-       let body, _ind = id in 
-         if body = "i" && Lang.supportsI then 
-           Var(id) 
-         else 
-           Var(substId (outList @ argList) id)
-    | _ -> e
-  in let substCom (c: command) : command =
-    match c with
-    | Asg([h], [Binop(b, e1, e2)]) -> Asg([substId outList h], [Binop(b, substExp e1, substExp e2)])
-    | Asg([h], [Var(id)]) -> Asg([substId outList h], [substExp (Var(id))])
-    | _ -> raise Invalid_command
-  in List.map substCom p
+   let body, ind = id in
+     if body = "i" then
+       id
+     else
+     ("up"^body, ind)
+   in let substExp (e: exp) : exp =
+        match e with 
+        | Var(id) ->
+            let body, _ind = id in
+              if body = "i" && Lang.supportsI then
+                Var(id)
+              else
+                Var(substId (outList @ argList) id) 
+        | _ -> e
+   in let substCom (c: command) : command =
+      match c with
+      | Asg([h], [Binop(b, e1, e2)]) -> Asg([substId outList h], [Binop(b, substExp e1, substExp e2)])
+      | Asg([h], [Var(id)]) -> Asg([substId outList h], [substExp (Var(id))])
+      | _ -> raise Invalid_command
+   in List.map substCom p
 
 exception Invalid_input of exp
 
@@ -171,6 +171,23 @@ let enableNestedFuncCom (c: command) : program =
       in let p, newArgs = List.fold_right processArg argList ([], [])  in
         p @ [Asg([id], [FxnApp(fId, newArgs)])]
   | _ -> [c]
+
+(* function to append "up" to all function workspace variables to prevent shadowing *) 
+let preventShadowing (p: program) : program = 
+  let handleId (id: varID) : varID = 
+    let body, ind = id in 
+      if (not (String.length body < 2)) && String.sub body 0 2 = "up" then 
+        "up"^body, ind 
+      else 
+         id  
+  in let handleCom (c: command) : command = 
+     match c with 
+     | Asg([h], [Binop(b, Var(id1), Var(id2))]) ->
+         Asg([handleId h], [Binop(b,Var(handleId id1), Var(handleId id2))])
+     | Asg([h], [Var(id)]) -> 
+         Asg([handleId h], [Var(handleId id)])
+     | _ -> raise Invalid_command 
+  in List.map handleCom p
 
 let enableNestedFuncProg (p: program) : program =
   mapToProg enableNestedFuncCom p
@@ -230,7 +247,7 @@ let rec enableIfProg (p: program) : program =
 and enableIfCom (c: command) : program =
   match c with
   | If(b, body) ->
-      expandIf b (enableIfProg body)
+      expandIf b (preventShadowing (enableIfProg body))
   | FxnDef(fId, f) ->
       [FxnDef(fId, {f with body = enableIfProg f.body})]
   | _ -> [c]
