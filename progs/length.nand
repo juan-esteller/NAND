@@ -1,0 +1,21 @@
+def a := NOT(b) { 
+ a := b NAND b 
+} 
+o := NOT(z) 
+if(NOT(foundlength)) {
+  if(NOT(seen_i)) { 
+    seen_i := o
+    if(validx_i) { 
+     length := o + length  
+    } 
+  }
+  if(NOT(validx_i)) { 
+    foundlength := o 
+  }
+  loop := o  
+}
+
+if(foundlength) { 
+  loop := z 
+  y_0 := length
+}  
