@@ -15,8 +15,14 @@ let binopList =
   ("-", (-));
   ("/", (/)); 
   ("==", makeReturnBit (=)); 
+  ("*", ( * )); 
   ("<", makeReturnBit (<)); 
-  (">", makeReturnBit (>));]
+  (">", makeReturnBit (>));
+  ("%", ( mod ));
+  ("&&", ( land )); 
+  ("^",  ( lxor )); 
+  (">>", ( lsr )); 
+  ("<<", ( lsl ));]
 
 let binopOfStr (b: string): int -> int -> int = 
   List.assoc b binopList   
