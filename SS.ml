@@ -150,7 +150,7 @@ let rec enableFuncCom  (st: funcStore ref) (c: command) : program =
   | Asg(ids, [FxnApp(fId, args)]) ->
      (try
        expandFunc ids args (FuncMap.find fId !st)
-      with Not_found -> raise (Unbound_function(fId)))
+      with Not_found -> [c]) 
   | If(b, body) -> 
       let curStore = !st in 
         let newBody = mapToProg (enableFuncCom st) body in 
@@ -179,14 +179,21 @@ let preventShadowing (p: program) : program =
       if (not (String.length body < 2)) && String.sub body 0 2 = "up" then 
         "up"^body, ind 
       else 
-         id  
+         id
+  in let handleVar (e: exp) : exp = 
+     match e with 
+     | Var(id) -> Var(handleId id) 
+     | _ -> raise Invalid_expression   
   in let handleCom (c: command) : command = 
      match c with 
      | Asg([h], [Binop(b, Var(id1), Var(id2))]) ->
          Asg([handleId h], [Binop(b,Var(handleId id1), Var(handleId id2))])
      | Asg([h], [Var(id)]) -> 
-         Asg([handleId h], [Var(handleId id)])
-     | _ -> raise Invalid_command 
+         Asg([handleId h], [Var(handleId id)]) 
+     | Asg(outList, [FxnApp(name, argList)]) -> 
+        let handleList = List.map handleId in 
+          Asg(handleList outList, [FxnApp(name, List.map handleVar argList)])
+     | _ -> (Printf.printf "Took this path\n"); raise Invalid_command 
   in List.map handleCom p
 
 let enableNestedFuncProg (p: program) : program =
@@ -269,7 +276,8 @@ let otherMacros =
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  enableFuncProg (enableIfProg (otherMacros p))  
+  let p' =  (enableIfProg (otherMacros p)) in 
+    (Printf.printf "finished macros before function\n"); enableFuncProg p'
 
 end 
 (*
