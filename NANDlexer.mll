@@ -9,8 +9,6 @@
 
   let _ = List.iter  (fun (kwd, tok) -> Hashtbl.add symTable kwd tok)
                        ([ (":=", ASG);
-                          ("zero", CONST(0)); 
-                          ("one", CONST(1));
                           ("def", DEF);
                           (",", COMMA);  
                           ("(", LEFT_PAREN); 
@@ -38,7 +36,7 @@
 
 }
 
-let sym = ":=" | "zero" | "one" | "," | "def" | "while" |  "(" | ")" | "{" | "}" | "if" | 
+let sym = ":=" | "," | "def" | "while" |  "(" | ")" | "{" | "}" | "if" | 
           "NAND" | "+" | "==" | "-" | "/" | "*" | "<" | ">" | "%" | "^" | "&&" | 
           "<<" | ">>"   
 let ind = ['0' - '9']+ | 'i'  

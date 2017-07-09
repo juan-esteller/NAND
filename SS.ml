@@ -39,7 +39,9 @@ end
 (* START OF MACROS, in order of increasing complexity *)
 module SSFromBackEnd (Lang: PL_back_end) : SS_module = 
 struct 
-
+(* really simple macro to add one and zero to language; zero is just initialized to zero *) 
+let addConsts (p: program) : program = 
+  (parseStr "one := zero NAND zero") @ p 
 
 (* macro to expand list of assignments to lines *)
 let unzipCom (c: command) : program =
@@ -279,13 +281,6 @@ let otherMacros =
 
 let addSS (p: program) : program =
   let p' =  (enableIfProg (otherMacros p)) in 
-    enableFuncProg p'
+    addConsts (enableFuncProg p')
 
 end 
-(*
-let constProg =
-  "notx_0 := x_0 NAND x_0
-   one := notx_0 NAND x_0
-   zero := one NAND one"
-(* assumes that program has already expanded all function applications *)
-let enableConst (p: program) : program = *)
