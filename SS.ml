@@ -239,7 +239,9 @@ let expandIf (e: exp) (p: program) : program =
             [Asg([newH], [e])] @ (enableMUX b (h, newH))  
     | _ -> raise (Invalid_command)
   in let b = strip e in
-      let newProg = List.concat (List.map (handleCom b) p)  in
+      let newB = freshVar () in 
+        let asg = enableAsgProg (parseStr ((strOfId newB)^" := "^(strOfId b))) in 
+        let newProg = asg @ (List.concat (List.map (handleCom newB) p))  in
         let origLine, endLine= 
        if not Lang.supportsAsg then 
           [], []
