@@ -43,6 +43,8 @@ and  command =
   (* function definition; first varID list corresponds
      to output, varID list corresponds to input *)
   | FxnDef of funcID * func
+   (* while loop w/ intuitive meaning *)  
+  | While of exp * program 
 and exp =
   | Const of int 
   | Var of varID

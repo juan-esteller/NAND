@@ -193,7 +193,7 @@ let preventShadowing (p: program) : program =
      | Asg(outList, [FxnApp(name, argList)]) -> 
         let handleList = List.map handleId in 
           Asg(handleList outList, [FxnApp(name, List.map handleVar argList)])
-     | _ -> (Printf.printf "Took this path\n"); raise Invalid_command 
+     | _ -> raise Invalid_command 
   in List.map handleCom p
 
 let enableNestedFuncProg (p: program) : program =
@@ -279,7 +279,7 @@ let otherMacros =
 
 let addSS (p: program) : program =
   let p' =  (enableIfProg (otherMacros p)) in 
-    (Printf.printf "finished macros before function\n"); enableFuncProg p'
+    enableFuncProg p'
 
 end 
 (*

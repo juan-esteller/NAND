@@ -18,6 +18,7 @@
                           ("{", LEFT_BRACK); 
                           ("}", RIGHT_BRACK);
                           ("if", IF);   
+                          ("while", WHILE); 
                         ] @ binops) 
 
   (* conversion from string to index *) 
@@ -37,7 +38,7 @@
 
 }
 
-let sym = ":=" | "zero" | "one" | "," | "def" | "(" | ")" | "{" | "}" | "if" | 
+let sym = ":=" | "zero" | "one" | "," | "def" | "while" |  "(" | ")" | "{" | "}" | "if" | 
           "NAND" | "+" | "==" | "-" | "/" | "*" | "<" | ">" | "%" | "^" | "&&" | 
           "<<" | ">>"   
 let ind = ['0' - '9']+ | 'i'  
