@@ -28,6 +28,14 @@ let isValue (e: exp) : bool =
 let mapToProg (macro: command -> program) (p: program): program =
   List.concat (List.map macro p)
 
+let rec enableNestedApp (m: program -> program) (p: program) =
+  let p' = m p in
+    let enterNestedProgs (c: command) : command =
+      match c with
+      | If(b, prog) -> If(b, enableNestedApp m prog)
+      | FxnDef(id, f) -> FxnDef(id, {f with body = (enableNestedApp m f.body)})
+      | _ -> c
+    in List.map enterNestedProgs p'
 
 
 (* END OF HELPER FUNCTIONS *)
@@ -41,7 +49,15 @@ module SSFromBackEnd (Lang: PL_back_end) : SS_module =
 struct 
 (* really simple macro to add one and zero to language; zero is just initialized to zero *) 
 let addConsts (p: program) : program = 
-  (parseStr "one := zero NAND zero") @ p 
+  let stdLib = 
+    "one := zero NAND zero 
+     def a := NOT(b) { 
+       a := b NAND b 
+     }
+     def a := AND(b, c) { 
+       a := NOT(b NAND c) 
+     }" 
+  in (parseStr stdLib) @ p 
 
 (* macro to expand list of assignments to lines *)
 let unzipCom (c: command) : program =
@@ -263,24 +279,56 @@ and enableIfCom (c: command) : program =
       [FxnDef(fId, {f with body = enableIfProg f.body})]
   | _ -> [c]
 
+
+let last (p: program) : command = List.hd (List.rev p) 
+
+let rec genPreLoop (preloop : program) (finishedpreloop: varID) : program = 
+  let b, asgn =  FxnApp("NOT", [Var(finishedpreloop)]), parseStr ((strOfId finishedpreloop)^" := one") in
+    let body = asgn @ preloop in 
+      [If(b, body)] 
+and genLoop (a: varID) (finishedpreloop: varID) (finishedloop: varID) (itemp: varID)  (body: program)  = 
+  let itempStr = strOfId itemp in
+  let recoveri = List.hd (parseStr ("i := "^itempStr)) in  
+  let innerif1 = If(Var(a), enableWhileProg (body @ (parseStr ("loop := one "^itempStr^" := i")))) in 
+  let innerif2 =  
+    let pred, asgn = FxnApp("NOT", [Var(a)]), parseStr ((strOfId finishedloop)^" := one loop := zero") in  
+        If(pred, asgn)  
+  in let pred = Var(finishedpreloop) in 
+   [If(pred, [recoveri; innerif1; innerif2])] 
+and genPostLoop (finishedloop: varID) (postloop : program) : program = 
+    [If(Var(finishedloop), enableWhileProg postloop)] 
+and expandWhile (a: varID) (preloop: program) (body: program) (postloop: program) : program = 
+ let finishedpreloop, finishedloop, itemp  = freshVar (), freshVar (), freshVar () in
+     let preloopcode, loopcode, postloopcode = 
+       genPreLoop preloop finishedpreloop, 
+       genLoop a finishedpreloop finishedloop itemp body,
+       genPostLoop finishedloop postloop
+     in enableIfProg ((enableNestedApp enableNestedIfProg) (preloopcode @ loopcode @ postloopcode)) 
+and enableWhileProg (p: program) : program =
+  let left = ref [] in 
+    let rec enableWhileProgHelp (p: program) : unit = 
+      match p with 
+      | [] -> () 
+      | c::right -> 
+        (match c with 
+         | While(b, body) -> left := (expandWhile (strip b) !left (enableWhileProg body) right)  
+         | If(b, body) -> 
+             left := !left @ ([(If(b, enableWhileProg body))]); enableWhileProgHelp right
+         | FxnDef(name, f) -> 
+             left := (!left @ [FxnDef(name, {f with body = (enableWhileProg f.body)})]); enableWhileProgHelp right
+         | _ ->
+             left := (!left @ [c]);  (enableWhileProgHelp right))
+  in (enableWhileProgHelp p); !left
+
 (* other macros to be applied to program, in order of their application *)
 let macroList = [unzipProg; enableAsgProg; enableNestedFuncProg; enableNestedIfProg]
-
-let rec enableNestedApp (m: program -> program) (p: program) =
-  let p' = m p in
-    let enterNestedProgs (c: command) : command =
-      match c with
-      | If(b, prog) -> If(b, enableNestedApp m prog)
-      | FxnDef(id, f) -> FxnDef(id, {f with body = (enableNestedApp m f.body)})
-      | _ -> c
-    in List.map enterNestedProgs p'
 
 let otherMacros =
   List.fold_left (fun acc f -> (fun p -> f (acc p))) (fun x -> x)
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  let p' =  (enableIfProg (otherMacros p)) in 
-    addConsts (enableFuncProg p')
+  let p' =  (enableIfProg ((otherMacros (addConsts (enableWhileProg p))))) in 
+    enableFuncProg p'
 
 end 

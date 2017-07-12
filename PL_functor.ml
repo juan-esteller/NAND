@@ -172,7 +172,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
             (pData.inc <- -1));
           (pData.i <- pData.i + pData.inc);
           (pData.pc <- pData.pc + 1);
-          (st := VarMap.add "i" pData.i !st);
+          (st := VarMap.add "i" pData.i !st);   
         end
 
     (* increments m if necessary *)
