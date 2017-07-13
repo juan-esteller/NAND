@@ -28,6 +28,8 @@ let isValue (e: exp) : bool =
 let mapToProg (macro: command -> program) (p: program): program =
   List.concat (List.map macro p)
 
+(* enables nested application of a macro by applying it to all 
+   sub-programs contained in function defs and if-statements *)
 let rec enableNestedApp (m: program -> program) (p: program) =
   let p' = m p in
     let enterNestedProgs (c: command) : command =
@@ -40,15 +42,17 @@ let rec enableNestedApp (m: program -> program) (p: program) =
 
 (* END OF HELPER FUNCTIONS *)
 
+(* module signature for syntactic sugar module *) 
 module type SS_module = sig
   val addSS : program -> program 
 end 
 
-(* START OF MACROS, in order of increasing complexity *)
+(* functor that takes in a PL_back_end and generates its SS module *) 
 module SSFromBackEnd (Lang: PL_back_end) : SS_module = 
 struct 
-(* really simple macro to add one and zero to language; zero is just initialized to zero *) 
-let addConsts (p: program) : program = 
+
+(* macro to add standard library to a program *)  
+let addStdLib (p: program) : program = 
   let stdLib = 
     "one := zero NAND zero 
      def a := NOT(b) { 
@@ -70,21 +74,29 @@ let unzipCom (c: command) : program =
        List.map2 pair vars exps
     | _ignore -> [c]
 
+(* ditto, but for entire program *) 
 let unzipProg (p: program) : program =
   mapToProg unzipCom p
 
+(* recursively expands an expression so that every assignment
+   is of form id_1 := id_2 BINOP id_3, and returns 
+   id that eventually receives value of expression *) 
 let rec expandExp (e: exp) : program * exp =
+  (* if expression is already a value, returns it *) 
   if isValue e then
     ([], e)
   else
-    match e with
+    match e with 
+    (* in case a binop, expands left and right arguments, returns *) 
     | Binop(b, e1, e2) ->
         let v = freshVar () in
           let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
             (p1 @ (p2 @ [Asg([v], [Binop(b, e1', e2')])]), Var(v))
-     | FxnApp(id, args) ->
+    (* expands every argument, then puts in their resultant IDs *)  
+    | FxnApp(id, args) ->
          let argList = List.map expandExp args in
-             let processArg ((p, e): program * exp) ((accProg, accArg): program * (exp list)) : program * (exp list)  =
+             let processArg ((p, e): program * exp) 
+                   ((accProg, accArg): program * (exp list)) : program * (exp list)  =
                (p @ accProg, e :: accArg)
              in let p, newArgs = List.fold_right processArg argList ([], [])  in
            let v = freshVar () in
@@ -92,14 +104,17 @@ let rec expandExp (e: exp) : program * exp =
      | _ -> ([], e)
 
 exception Impossible
-(* enables direct assignment (i.e. a := b)  *)
+
+(* enables assignment of any form for commands *)  
 let enableAsgCom (c: command) : program =
+  (* in the case it finds direct assignment, expands it to two lines if needed *) 
   match c with
   | Asg([u], [e]) ->
      if isValue e && not Lang.supportsAsg then
       let newVar, eStr =  freshVar (), strOfExp e in
         let newVarStr = strOfId newVar in
          (genLine newVar eStr eStr) @ (genLine u newVarStr newVarStr)
+     (* for binary operations, expands both arguments *) 
      else (match e with
            | Binop(b, e1, e2) ->
               let (p1, e1'), (p2, e2') = expandExp e1, expandExp e2 in
@@ -108,6 +123,7 @@ let enableAsgCom (c: command) : program =
            | _ -> [c])  
   | _ -> [c]
 
+(* enables assignment of any form for entire program *) 
 let enableAsgProg (p: program) : program =
   mapToProg enableAsgCom p
 
@@ -117,16 +133,24 @@ module FuncMap = Map.Make(String)
 (* function store is a hashtable from function IDs to functions *)
 type funcStore =  func FuncMap.t
 
-let substProg (outList: (varID * varID) list) (argList: (varID * varID) list) (p: program) : program =
+(* takes in function body, argument list, and output list, and performs appropriate substitutions *) 
+let substProg (outList: (varID * varID) list) 
+              (argList: (varID * varID) list) (p: program) : program =
+  (* helper function that substitutes for an ID in the body given a list of substitutions  *) 
   let substId (subsList: (varID * varID) list) (id: varID) : varID =
+    (* looks for in id list of substitution *) 
     try
       List.assoc id subsList
-    with Not_found ->
-   let body, ind = id in
-     if body = "i" then
-       id
-     else
-     ("up"^body, ind)
+    with 
+    | Not_found ->
+        let body, ind = id in
+          (* "i" is a global variable, so it's never changed *) 
+          if body = "i" then
+            id
+          else  
+          (* prepends "up" to prevent shadowing *) 
+            ("up"^body, ind)
+   (* helper function that substitutes in expressions *) 
    in let substExp (e: exp) : exp =
         match e with 
         | Var(id) ->
@@ -136,7 +160,10 @@ let substProg (outList: (varID * varID) list) (argList: (varID * varID) list) (p
               else
                 Var(substId (outList @ argList) id) 
         | _ -> e
+   (* helper function that substitutes for commands *) 
    in let substCom (c: command) : command =
+      (* NOTE: when we're substituting for variables that we're assigning to, 
+         we only use output list, so that function argumetns remain immutable *) 
       match c with
       | Asg([h], [Binop(b, e1, e2)]) -> Asg([substId outList h], [Binop(b, substExp e1, substExp e2)])
       | Asg([h], [Var(id)]) -> Asg([substId outList h], [substExp (Var(id))])
@@ -145,41 +172,55 @@ let substProg (outList: (varID * varID) list) (argList: (varID * varID) list) (p
 
 exception Invalid_input of exp
 
+(* strips expression that should be variable of wrapper *) 
 let strip (e: exp) : varID =
   match e with
   | Var(id) -> id
   | _ -> raise (Invalid_input(e))
 
+(* takes in output list of function, arguments, and function record, 
+   and returns corresponding program *)  
 let expandFunc (ids: varID list) (args: exp list) (f: func): program =
-  let zip = List.map2 (fun x y -> (x, y)) in
+ (* takes two lists and creates list of tuples *)  
+ let zip = List.map2 (fun x y -> (x, y)) in
+    (* associates inputs with input IDs, ditto for arguments *) 
     let outList, argsList = (zip f.outputs ids), (zip f.inputs (List.map strip args)) in
       substProg outList argsList f.body
 
 exception Unbound_function of funcID
 
-(* processes a line in a program with function definitions *)
+(* processes a line in a program with function definitions; 
+   takes in as argument a command, and reference to store 
+   of defined functions  *)
 let rec enableFuncCom  (st: funcStore ref) (c: command) : program =
   match c with
+  (* in case it finds a function ID, expands all function in body
+     (passing in new reference for scoping), and then adds function 
+     to top-level store *) 
   | FxnDef(fId, f) ->
      let curStore = !st in
        let newBody = mapToProg (enableFuncCom st) f.body in
          let newFun = {f with body = newBody} in
            (st := FuncMap.add fId newFun  curStore); []
+  (* if it finds a function application, tries to expand it *) 
   | Asg(ids, [FxnApp(fId, args)]) ->
      (try
        expandFunc ids args (FuncMap.find fId !st)
-      with Not_found -> [c]) 
+      with 
+      | Not_found -> [c]) 
+  (* in case it finds if-statement, enters its body *) 
   | If(b, body) -> 
       let curStore = !st in 
         let newBody = mapToProg (enableFuncCom st) body in 
           (st := curStore); [If(b, newBody)] 
   | _ -> [c]
 
-
+(* maps enableFuncCom to entire program to expand functions *) 
 let enableFuncProg (p: program) : program =
   let st = ref FuncMap.empty in
     mapToProg (enableFuncCom st) p
 
+(* enables arbitrary expressions as function arguments for individual commands *) 
 let enableNestedFuncCom (c: command) : program =
   match c with
   | Asg([id], [FxnApp(fId, args)]) ->
@@ -190,7 +231,13 @@ let enableNestedFuncCom (c: command) : program =
         p @ [Asg([id], [FxnApp(fId, newArgs)])]
   | _ -> [c]
 
-(* function to append "up" to all function workspace variables to prevent shadowing *) 
+(* ditto, for programs *) 
+let enableNestedFuncProg (p: program) : program =
+  mapToProg enableNestedFuncCom p
+
+(* function to append "up" to all function workspace variables
+   that already have prefix "up"  to prevent shadowing for 
+   if-statements (necessary for transformation for nested if-statements in NAND<< *) 
 let preventShadowing (p: program) : program = 
   let handleId (id: varID) : varID = 
     let body, ind = id in 
@@ -214,9 +261,7 @@ let preventShadowing (p: program) : program =
      | _ -> raise Invalid_command 
   in List.map handleCom p
 
-let enableNestedFuncProg (p: program) : program =
-  mapToProg enableNestedFuncCom p
-
+(* enables arbitrary expressions as predicate for if-statements *) 
 let enableNestedIfCom (c: command) : program =
   match c with
   | If(exp, prog) ->
@@ -224,20 +269,26 @@ let enableNestedIfCom (c: command) : program =
         p @ [If(id, prog)]
   | _ -> [c]
 
+(* maps to entire program *) 
 let enableNestedIfProg (p: program) : program =
   mapToProg enableNestedIfCom p
 
+(* creates MUX application, where b is predicate and l 
+   may be updated to have the value of r *) 
 let enableMUX (b: varID) ((l, r):  (varID * varID)) : program =
   let bStr, lStr, rStr = strOfId b, strOfId l, strOfId r in
    let comStr = lStr^" := MUX("^bStr^", "^lStr^", "^rStr^")" in
      parseStr comStr
 
+(* expands MUX applications left lying around in program; 
+   written in this manner to prevent re-parsing *) 
 let expandMUX: program ->  program =
   let muxDefProg = parseStr Lang.muxDefStr in
     fun (p: program) -> enableFuncProg (muxDefProg @ p)
 
 exception Internal_error
-
+(* function to restore value of i after potential usage by 
+   MUX function *) 
 let restoreIProg (v: varID) (b: varID) : program = 
     let varStr, bStr = strOfId v, strOfId b in 
       let progStr = 
@@ -247,7 +298,9 @@ let restoreIProg (v: varID) (b: varID) : program =
        "  i := tmp_i" 
       in parseStr progStr    
 
+(* expands if-statement with body p, predicate e *) 
 let expandIf (e: exp) (p: program) : program =
+  (* interleaves MUX into lines of program to update variables properly *) 
   let handleCom (b: varID) (c: command) : program =
     match c with
     | Asg([h], [e])->
@@ -261,9 +314,10 @@ let expandIf (e: exp) (p: program) : program =
         let asg = enableAsgProg (parseStr ((strOfId newB)^" := "^(strOfId b))) in 
         let newProg = asg @ (List.concat (List.map (handleCom newB) p))  in
         let origLine, endLine= 
-       if not Lang.supportsAsg then 
+      (* if program uses i for MUX, adds appropriate bookkeeping to if-statements *)  
+      if not Lang.supportsAsg then 
           [], []
-       else 
+       else  
           let temp = freshVar () in
              let tempStr, bStr = strOfId temp, strOfId b in 
                parseStr (tempStr^":= i"), restoreIProg temp b  
@@ -279,9 +333,7 @@ and enableIfCom (c: command) : program =
       [FxnDef(fId, {f with body = enableIfProg f.body})]
   | _ -> [c]
 
-
-let last (p: program) : command = List.hd (List.rev p) 
-
+(* unfortunately, these are best implemented as mutually recursive functions *) 
 let rec genPreLoop (preloop : program) (finishedpreloop: varID) : program = 
   let b, asgn =  FxnApp("NOT", [Var(finishedpreloop)]), parseStr ((strOfId finishedpreloop)^" := one") in
     let body = asgn @ preloop in 
@@ -303,7 +355,7 @@ and expandWhile (a: varID) (preloop: program) (body: program) (postloop: program
        genPreLoop preloop finishedpreloop, 
        genLoop a finishedpreloop finishedloop itemp body,
        genPostLoop finishedloop postloop
-     in enableIfProg ((enableNestedApp enableNestedIfProg) (preloopcode @ loopcode @ postloopcode)) 
+     in  (preloopcode @ loopcode @ postloopcode) 
 and enableWhileProg (p: program) : program =
   let left = ref [] in 
     let rec enableWhileProgHelp (p: program) : unit = 
@@ -328,7 +380,7 @@ let otherMacros =
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  let p' =  (enableIfProg ((otherMacros (addConsts (enableWhileProg p))))) in 
+  let p' =  (enableIfProg ((otherMacros (addStdLib (enableWhileProg p))))) in 
     enableFuncProg p'
 
 end 
