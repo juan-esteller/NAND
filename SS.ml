@@ -320,7 +320,7 @@ let expandIf (e: exp) (p: program) : program =
        else  
           let temp = freshVar () in
              let tempStr, bStr = strOfId temp, strOfId b in 
-               parseStr (tempStr^":= i"), restoreIProg temp b  
+               parseStr (tempStr^":= i"), restoreIProg temp newB  
       in origLine @ (expandMUX newProg) @ endLine
 
 let rec enableIfProg (p: program) : program =
@@ -357,7 +357,8 @@ and expandWhile (a: varID) (preloop: program) (body: program) (postloop: program
        genPostLoop finishedloop postloop
      in  (preloopcode @ loopcode @ postloopcode) 
 and enableWhileProg (p: program) : program =
-  let left = ref [] in 
+  let left = ref [] in
+  let fxndefs = ref [] in  
     let rec enableWhileProgHelp (p: program) : unit = 
       match p with 
       | [] -> () 
@@ -367,10 +368,14 @@ and enableWhileProg (p: program) : program =
          | If(b, body) -> 
              left := !left @ ([(If(b, enableWhileProg body))]); enableWhileProgHelp right
          | FxnDef(name, f) -> 
-             left := (!left @ [FxnDef(name, {f with body = (enableWhileProg f.body)})]); enableWhileProgHelp right
+             let newDef = FxnDef(name, {f with body = (enableWhileProg f.body)}) in 
+               begin
+                (fxndefs := newDef :: !fxndefs); 
+                (enableWhileProgHelp right);
+               end 
          | _ ->
              left := (!left @ [c]);  (enableWhileProgHelp right))
-  in (enableWhileProgHelp p); !left
+  in (enableWhileProgHelp p); (List.rev !fxndefs) @ !left
 
 (* other macros to be applied to program, in order of their application *)
 let macroList = [unzipProg; enableAsgProg; enableNestedFuncProg; enableNestedIfProg]

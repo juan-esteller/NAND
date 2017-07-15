@@ -2,8 +2,8 @@ open PL_functor
 open PL_modules
 open SS 
 
-module NAND = PLFromBackEnd(NANDPP_back_end)  
-module SS_lang = SSFromBackEnd(NANDPP_back_end) 
+module NAND = PLFromBackEnd(NANDGG_back_end)  
+module SS_lang = SSFromBackEnd(NANDGG_back_end) 
 let () =
   let _ =
     if Array.length Sys.argv <> 3 then
@@ -18,6 +18,5 @@ let () =
   let lexbuf = Lexing.from_channel file in
   let program = NANDparser.parseProg NANDlexer.token lexbuf in
    let program = SS_lang.addSS program in  
-   let _ = Printf.printf "Added SS\n" in 
   let output = NAND.execute program Sys.argv.(2) in
       Printf.printf "Output is %s\n" output
