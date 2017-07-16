@@ -338,22 +338,22 @@ let rec genPreLoop (preloop : program) (finishedpreloop: varID) : program =
   let b, asgn =  FxnApp("NOT", [Var(finishedpreloop)]), parseStr ((strOfId finishedpreloop)^" := one") in
     let body = asgn @ preloop in 
       [If(b, body)] 
-and genLoop (a: varID) (finishedpreloop: varID) (finishedloop: varID) (itemp: varID)  (body: program)  = 
-  let itempStr = strOfId itemp in
+and genLoop (e: exp) (finishedpreloop: varID) (finishedloop: varID) (itemp: varID)  (body: program)  = 
+  let itempStr = strOfId itemp in 
   let recoveri = List.hd (parseStr ("i := "^itempStr)) in  
-  let innerif1 = If(Var(a), enableWhileProg (body @ (parseStr ("loop := one "^itempStr^" := i")))) in 
+  let innerif1 = If(e, enableWhileProg (body @ (parseStr ("loop := one "^itempStr^" := i")))) in 
   let innerif2 =  
-    let pred, asgn = FxnApp("NOT", [Var(a)]), parseStr ((strOfId finishedloop)^" := one loop := zero") in  
+    let pred, asgn = FxnApp("NOT", [e]), parseStr ((strOfId finishedloop)^" := one loop := zero") in  
         If(pred, asgn)  
   in let pred = Var(finishedpreloop) in 
    [If(pred, [recoveri; innerif1; innerif2])] 
 and genPostLoop (finishedloop: varID) (postloop : program) : program = 
     [If(Var(finishedloop), enableWhileProg postloop)] 
-and expandWhile (a: varID) (preloop: program) (body: program) (postloop: program) : program = 
+and expandWhile (e: exp) (preloop: program) (body: program) (postloop: program) : program = 
  let finishedpreloop, finishedloop, itemp  = freshVar (), freshVar (), freshVar () in
      let preloopcode, loopcode, postloopcode = 
        genPreLoop preloop finishedpreloop, 
-       genLoop a finishedpreloop finishedloop itemp body,
+       genLoop e finishedpreloop finishedloop itemp body,
        genPostLoop finishedloop postloop
      in  (preloopcode @ loopcode @ postloopcode) 
 and enableWhileProg (p: program) : program =
@@ -364,7 +364,7 @@ and enableWhileProg (p: program) : program =
       | [] -> () 
       | c::right -> 
         (match c with 
-         | While(b, body) -> left := (expandWhile (strip b) !left (enableWhileProg body) right)  
+         | While(b, body) -> left := (expandWhile b !left (enableWhileProg body) right)  
          | If(b, body) -> 
              left := !left @ ([(If(b, enableWhileProg body))]); enableWhileProgHelp right
          | FxnDef(name, f) -> 
