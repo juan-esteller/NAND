@@ -30,6 +30,7 @@ type args = varID list
 (* type for function ID's *)
 type funcID = string
 
+
 type program =
   (* code is just a list of commands *)
   command list
@@ -44,7 +45,8 @@ and  command =
      to output, varID list corresponds to input *)
   | FxnDef of funcID * func
    (* while loop w/ intuitive meaning *)  
-  | While of exp * program 
+  | While of exp * program
+  | IndexOp of indexop 
 and exp =
   | Const of int 
   | Var of varID
@@ -55,11 +57,13 @@ and func = {
     outputs: args;
     body: program;
   }
+and indexop = varID -> exp 
 
 exception Invalid_command
 exception Invalid_expression
 
-(* utility function to apply mapping to valid run-time commands *)
+(* utility function to apply mapping to valid run-ti
+e commands *)
 let mapOverCom (f: binop option -> varID -> exp -> exp option -> 'a) (c: command): 'a =
   match c with
   | Asg([h], [Binop(b, l, r)]) -> f (Some b) h l (Some r)

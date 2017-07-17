@@ -1,12 +1,16 @@
 { 
   open PL_functor 
-  open Binops
-  open NANDparser
+  open NANDparser ;;
+  open Binops ;; 
+  open Indexops ;; 
+
   let symTable =
     Hashtbl.create 30
 
   let binops = List.map (fun (x, _y) -> (x, BINOP(x))) binopList 
-
+  let indexops = List.map (fun (x, y) -> (x, INDEXOP(y))) indexopList 
+  let oplist = indexops @ binops 
+ 
   let _ = List.iter  (fun (kwd, tok) -> Hashtbl.add symTable kwd tok)
                        ([ (":=", ASG);
                           ("def", DEF);
@@ -17,7 +21,7 @@
                           ("}", RIGHT_BRACK);
                           ("if", IF);   
                           ("while", WHILE); 
-                        ] @ binops) 
+                        ] @ oplist) 
 
   (* conversion from string to index *) 
   let indOfString (s : string) : index = 
@@ -37,7 +41,7 @@
 }
 
 let sym = ":=" | "," | "def" | "while" |  "(" | ")" | "{" | "}" | "if" | 
-          "NAND" | "+" | "==" | "-" | "/" | "*" | "<" | ">" | "%" | "^" | "&&" | 
+          "NAND" | "++" | "+" | "==" | "--" |  "-" | "/" | "*" | "<" | ">" | "%" | "^" | "&&" | 
           "<<" | ">>"   
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
