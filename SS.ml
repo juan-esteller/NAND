@@ -395,7 +395,7 @@ let enableIndexTracking (p: program) : program =
     p @ indexTrackProg
 
 let expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID -> exp) = 
-  let sweeping, wasoriginal, isoriginal, tempLoop  = freshVar (), freshVar(), freshVar (), ("original", I) in  
+  let sweeping, wasoriginal, tempLoop, isoriginal = freshVar (), freshVar(), freshVar (), ("original", I) in  
   let storeLoop = parseStr ((strOfId tempLoop)^" := loop") in 
   let recoverLoop = parseStr ("loop := "^(strOfId tempLoop)) in
   let makeLoopOne = parseStr "loop := one" in   
