@@ -394,34 +394,35 @@ let enableIndexTracking (p: program) : program =
   else 
     p @ indexTrackProg
 
-let expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID -> exp) = 
+let rec expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID -> exp) =
   let sweeping, wasoriginal, tempLoop, isoriginal = freshVar (), freshVar(), freshVar (), ("original", I) in  
   let storeLoop = parseStr ((strOfId tempLoop)^" := loop") in 
   let recoverLoop = parseStr ("loop := "^(strOfId tempLoop)) in
   let makeLoopOne = parseStr "loop := one" in   
-  let originalAsg = parseStr ((strOfId isoriginal)^" := one") in 
-  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), preIncrCode @ originalAsg @ storeLoop)  in
+  let originalAsg = parseStr ("original_i := one") in 
+  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), enableIncProg' (preIncrCode @ originalAsg @ storeLoop))  in
   let sweepingAsgZero = parseStr ((strOfId sweeping)^" := zero") in  
   let sweepingAsgOne = parseStr ((strOfId sweeping)^" := one") in 
-  let postIncrProg = If(op wasoriginal, recoverLoop @ postIncrCode @ sweepingAsgZero) in 
-  let updateWasOriginal = If(Var(sweeping), parseStr ((strOfId wasoriginal)^" := original_i original_i := zero")) in 
+  let postIncrProg = If(op wasoriginal, recoverLoop @ sweepingAsgZero @ postIncrCode) in 
+  let updateWasOriginal =  If(Var(sweeping), parseStr ((strOfId wasoriginal)^" := original_i original_i := zero")) in 
       preIncrProg :: makeLoopOne @ sweepingAsgOne @ postIncrProg :: [updateWasOriginal] 
-           
 (* macro to process incrementation command in NAND++ and NAND<< programs-- 
    assumes other SS is boiled out already *) 
-let rec enableIncProg (p: program) : program  = 
-  let left = ref [] in 
+and enableIncProg' (p: program) : program  = 
+  let right = ref [] in 
   let rec helpEnableIncProg (p: program) : unit = 
-   match p with 
+   match List.rev p with 
    | [] -> () 
    | h::t -> (match h with 
-              | IndexOp(op) -> left := expandIndexOp !left (enableIncProg t) op  
-              | c -> left := !left @ [c]; helpEnableIncProg t) 
+              | IndexOp(op) -> right := expandIndexOp (List.rev t) !right  op  
+              | c -> right :=  c::!right; helpEnableIncProg (List.rev t)) 
   in let _ = helpEnableIncProg p in
-    let firstpart = ((enableIfProg ((enableNestedApp enableNestedIfProg) (enableIndexTracking (addStdLib !left))))) in  
+     !right
+
+let enableIncProg (p: program) : program = 
+  let p' = enableIncProg' p in 
+    let firstpart = ((enableIfProg ((enableNestedApp enableNestedIfProg) (enableIndexTracking (addStdLib p'))))) in  
       enableAsgProg (enableFuncProg ((enableNestedApp enableNestedFuncProg) firstpart))
-
-
 (* other macros to be applied to program, in order of their application *)
 let macroList = [unzipProg; enableAsgProg; enableNestedFuncProg; enableNestedIfProg]
 
