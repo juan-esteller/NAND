@@ -404,8 +404,8 @@ let rec expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID
   let sweepingAsgZero = parseStr ((strOfId sweeping)^" := zero") in  
   let sweepingAsgOne = parseStr ((strOfId sweeping)^" := one") in 
   let postIncrProg = If(op wasoriginal, recoverLoop @ sweepingAsgZero @ postIncrCode) in 
-  let updateWasOriginal =  If(Var(sweeping), parseStr ((strOfId wasoriginal)^" := original_i original_i := zero")) in 
-      preIncrProg :: makeLoopOne @ sweepingAsgOne @ postIncrProg :: [updateWasOriginal] 
+  let updateWasOriginal =  parseStr ((strOfId wasoriginal)^" := original_i original_i := zero") in 
+      preIncrProg :: makeLoopOne @ sweepingAsgOne @ [postIncrProg] @ updateWasOriginal 
 (* macro to process incrementation command in NAND++ and NAND<< programs-- 
    assumes other SS is boiled out already *) 
 and enableIncProg' (p: program) : program  = 
