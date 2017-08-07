@@ -1,0 +1,12 @@
+while(validx_i) { 
+ y_i := x_i
+ cur := cur + one  
+ i := cur 
+}
+cur := zero
+ 
+while(validx_i) { 
+  y_i := NOT(x_i)
+  cur := cur + one
+  i := cur 
+} 

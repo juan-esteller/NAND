@@ -1,0 +1,20 @@
+if(NOT(finishedpreloop)) { 
+  y_i := one 
+  finishedpreloop := one 
+} 
+if(AND(finishedpreloop, NOT(finishedloop))) {
+  i := temp
+  if(validx_i) {   
+    length := length + one 
+    i := length   
+    temp := i  
+    loop := one 
+  }  
+  if(NOT(validx_i)) {
+    finishedloop := one  
+    loop := zero 
+  } 
+} 
+if(finishedloop) { 
+  y := length
+} 

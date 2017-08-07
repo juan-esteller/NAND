@@ -1,0 +1,2 @@
+two := one + one 
+y_0 := x_0 / two 

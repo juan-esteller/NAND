@@ -1,0 +1,6 @@
+o := z NAND z 
+if(o) { 
+  n := o 
+  n := n NAND n 
+}
+y_0 := n  

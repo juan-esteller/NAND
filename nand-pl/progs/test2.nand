@@ -1,0 +1,6 @@
+o := z NAND z 
+if(o) { 
+  if(o) { 
+    y_0 := o 
+  } 
+} 

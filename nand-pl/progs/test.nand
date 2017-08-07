@@ -1,0 +1,6 @@
+i := one + one 
+if(x_i) { 
+  i := i + one 
+  y_0 := i  
+}
+y_i := one  

@@ -1,0 +1,5 @@
+while(validx_i) { 
+  y_i := x_i 
+  cur := cur + one 
+  i := cur
+} 

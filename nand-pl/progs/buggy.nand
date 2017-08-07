@@ -1,0 +1,6 @@
+if(validx_i) { 
+  cur := one
+  i := cur 
+  y_i := one 
+}
+ 

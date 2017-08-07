@@ -1,0 +1,19 @@
+while(validx_i) { 
+  cur := cur + one 
+  i := cur
+} 
+ind := zero 
+two := one + one 
+middle := cur >> one 
+while(ind < cur) { 
+  i := ind 
+  left := x_i 
+  i := (cur - i) - one  
+  right := x_i  
+  b_1 := left == right
+  if(NOT(b_1)) { 
+    t := one
+  }
+  ind := ind + one 
+}
+y_0 := NOT(t) 

@@ -1,0 +1,16 @@
+o_1 := z_0 NAND z_0
+if(o_1) { 
+  id_2 := i
+  id_1 := o_1
+  newtmp_0 := y_0
+  newtmp_1 := id_1
+  newtemp_0 := i
+  i := o_1
+  newres_0 := newtmp_i
+  i := newtemp_0
+  y_0 := newres_0
+  tmp_0 := id_2
+  tmp_1 := i
+  i := o_1
+  i := tmp_i
+} 

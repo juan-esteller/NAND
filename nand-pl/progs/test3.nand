@@ -1,0 +1,8 @@
+o := z NAND z 
+if(z) { 
+   i := i + o 
+   y_0 := x_i 
+}
+i := i + o 
+y_0 := x_i  
+

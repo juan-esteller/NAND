@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ocamlbuild main.native -Is src,parsing

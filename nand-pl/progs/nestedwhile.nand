@@ -1,0 +1,5 @@
+while(zero) { 
+  while(zero) {  
+    y_i := one 
+  } 
+}

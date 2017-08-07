@@ -1,0 +1,9 @@
+o_1 := z NAND z 
+if(o_1) { 
+  if(o_1) {
+    no := o_1 NAND o_1 
+    if(no) { 
+      y_0 := o_1
+     }  
+  } 
+} 

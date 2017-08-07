@@ -1,0 +1,15 @@
+while(validx_i) {
+  length := length + one 
+  i := length
+}
+cur := zero 
+b := cur < length
+while(b) {
+  idk := length - cur  
+  i := idk - one 
+  xval := x_i 
+  i := cur 
+  y_i := xval
+  cur := cur + one 
+  b := cur < length
+} 

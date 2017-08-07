@@ -1,0 +1,64 @@
+### Starting build.
+# Target: main.ml.depends, tags: { extension:ml, file:main.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules main.ml > main.ml.depends
+# Target: src/file_exec.ml.depends, tags: { extension:ml, file:src/file_exec.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/file_exec.ml > src/file_exec.ml.depends
+# Target: parsing/NANDlexer.mll, tags: { extension:mll, file:parsing/NANDlexer.mll, lexer, ocaml, ocamllex, quiet }
+/usr/bin/ocamllex -q parsing/NANDlexer.mll
+# Target: parsing/NANDlexer.ml.depends, tags: { extension:ml, file:parsing/NANDlexer.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules parsing/NANDlexer.ml > parsing/NANDlexer.ml.depends
+# Target: src/binops.ml.depends, tags: { extension:ml, file:src/binops.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/binops.ml > src/binops.ml.depends
+# Target: src/indexops.ml.depends, tags: { extension:ml, file:src/indexops.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/indexops.ml > src/indexops.ml.depends
+# Target: src/PL_functor.ml.depends, tags: { extension:ml, file:src/PL_functor.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/PL_functor.ml > src/PL_functor.ml.depends
+# Target: src/binops.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/binops.cmo, file:src/binops.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/binops.cmo src/binops.ml
+# Target: src/PL_functor.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/PL_functor.cmo, file:src/PL_functor.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/PL_functor.cmo src/PL_functor.ml
+# Target: parsing/NANDparser.mly, tags: { extension:mly, file:parsing/NANDparser.mly, ocaml, ocamlyacc, parser, quiet }
+/usr/bin/ocamlyacc parsing/NANDparser.mly
+# Target: parsing/NANDparser.mli.depends, tags: { extension:mli, file:parsing/NANDparser.mli, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules parsing/NANDparser.mli > parsing/NANDparser.mli.depends
+# Target: src/indexops.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/indexops.cmo, file:src/indexops.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/indexops.cmo src/indexops.ml
+# Target: parsing/NANDparser.cmi, tags: { byte, compile, extension:mli, file:parsing/NANDparser.mli, interf, ocaml, quiet }
+/usr/bin/ocamlc -c -I parsing -I src -o parsing/NANDparser.cmi parsing/NANDparser.mli
+# Target: src/PL_modules.ml.depends, tags: { extension:ml, file:src/PL_modules.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/PL_modules.ml > src/PL_modules.ml.depends
+# Target: src/SS.ml.depends, tags: { extension:ml, file:src/SS.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules src/SS.ml > src/SS.ml.depends
+# Target: parsing/NANDlexer.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:parsing/NANDlexer.cmo, file:parsing/NANDlexer.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I parsing -I src -o parsing/NANDlexer.cmo parsing/NANDlexer.ml
+# Target: src/PL_modules.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/PL_modules.cmo, file:src/PL_modules.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/PL_modules.cmo src/PL_modules.ml
+# Target: src/SS.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/SS.cmo, file:src/SS.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/SS.cmo src/SS.ml
+# Target: src/file_exec.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/file_exec.cmo, file:src/file_exec.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I src -I parsing -o src/file_exec.cmo src/file_exec.ml
+# Target: main.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet }
+/usr/bin/ocamlc -c -I parsing -I src -o main.cmo main.ml
+# Target: src/binops.cmx, tags: { compile, extension:cmx, extension:ml, file:src/binops.cmx, file:src/binops.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/binops.cmx src/binops.ml
+# Target: src/PL_functor.cmx, tags: { compile, extension:cmx, extension:ml, file:src/PL_functor.cmx, file:src/PL_functor.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/PL_functor.cmx src/PL_functor.ml
+# Target: parsing/NANDparser.ml.depends, tags: { extension:ml, file:parsing/NANDparser.ml, ocaml, ocamldep, quiet }
+/usr/bin/ocamldep -modules parsing/NANDparser.ml > parsing/NANDparser.ml.depends
+# Target: src/indexops.cmx, tags: { compile, extension:cmx, extension:ml, file:src/indexops.cmx, file:src/indexops.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/indexops.cmx src/indexops.ml
+# Target: parsing/NANDparser.cmx, tags: { compile, extension:cmx, extension:ml, file:parsing/NANDparser.cmx, file:parsing/NANDparser.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I parsing -I src -o parsing/NANDparser.cmx parsing/NANDparser.ml
+# Target: parsing/NANDlexer.cmx, tags: { compile, extension:cmx, extension:ml, file:parsing/NANDlexer.cmx, file:parsing/NANDlexer.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I parsing -I src -o parsing/NANDlexer.cmx parsing/NANDlexer.ml
+# Target: src/PL_modules.cmx, tags: { compile, extension:cmx, extension:ml, file:src/PL_modules.cmx, file:src/PL_modules.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/PL_modules.cmx src/PL_modules.ml
+# Target: src/SS.cmx, tags: { compile, extension:cmx, extension:ml, file:src/SS.cmx, file:src/SS.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/SS.cmx src/SS.ml
+# Target: src/file_exec.cmx, tags: { compile, extension:cmx, extension:ml, file:src/file_exec.cmx, file:src/file_exec.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I src -I parsing -o src/file_exec.cmx src/file_exec.ml
+# Target: main.cmx, tags: { compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet }
+/usr/bin/ocamlopt -c -I parsing -I src -o main.cmx main.ml
+# Target: main.native, tags: { dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet }
+/usr/bin/ocamlopt src/binops.cmx src/PL_functor.cmx src/indexops.cmx parsing/NANDparser.cmx parsing/NANDlexer.cmx src/PL_modules.cmx src/SS.cmx src/file_exec.cmx main.cmx -o main.native
+# Compilation successful.

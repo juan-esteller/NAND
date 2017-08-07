@@ -1,0 +1,7 @@
+while(x_i) {
+  if(validx_i) { 
+    cur := cur + one 
+    i := cur 
+  } 
+}
+y_0 := cur

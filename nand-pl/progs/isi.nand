@@ -1,0 +1,14 @@
+def b := ISI(idk) { 
+         o := z NAND z
+         tmp := i  
+         b_1 := idk == i 
+         i := i + o 
+         b_2 := idk == i
+         nb := b_1 NAND b_2 
+         b := nb NAND nb 
+         i := tmp  
+       } 
+
+y_0 := ISI(a) 
+y_1 := ISI(i) 
+y_2 := ISI(k) 

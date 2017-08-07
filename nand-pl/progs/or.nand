@@ -1,0 +1,7 @@
+def a := OR(b, c) { 
+  a := NOT(b) NAND NOT(c) 
+}
+def a := XOR(b, c) { 
+  a := AND(OR(b, c), NOT(AND(b, c))) 
+} 
+y_0 := XOR(x_0, x_1)  

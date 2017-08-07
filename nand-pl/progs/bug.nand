@@ -1,0 +1,4 @@
+if(num NAND num) { 
+  num := num NAND num 
+}
+y := num  

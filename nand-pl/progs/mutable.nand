@@ -1,0 +1,6 @@
+def a := INC(b) { 
+  o := z NAND z 
+  i := i + o 
+} 
+a := INC(i)
+y_0 := x_i  

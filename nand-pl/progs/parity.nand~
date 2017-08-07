@@ -1,0 +1,10 @@
+// Do s := s XOR xal
+ns := s NAND s
+y_0 := ns NAND ns
+u := val NAND s
+v := s NAND u
+w := val NAND u
+s := v NAND w
+seen_i := z NAND z
+stop := validx_i NAND validx_i
+loop := stop NAND stop

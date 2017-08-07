@@ -1,0 +1,6 @@
+def a := ID(b) { 
+  nb := b NAND b 
+  a := nb NAND nb 
+}
+
+y_0 := ID(x_0) 
