@@ -290,7 +290,8 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
              updateProgData pData st;
              (*TODO: we'll eventually need to implement a time-out *)
               (if  Lang.supportsLoop && ((safeFind "loop" !st) = 1) then 
-                  evalLoop ());  
+                 let _ = Printf.printf "Entering new iteration\n" in 
+                   evalLoop ());  
            end
       in let _ = evalLoop () in
            stringOfStore !st pData.m

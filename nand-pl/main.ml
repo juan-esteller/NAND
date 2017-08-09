@@ -3,8 +3,8 @@ open PL_modules
 open File_exec
 open SS 
 
-module NAND = PLFromBackEnd(NAND_back_end)  
-module SS_lang = SSFromBackEnd(NAND_back_end) 
+module NAND = PLFromBackEnd(NANDPP_back_end)  
+module SS_lang = SSFromBackEnd(NANDPP_back_end) 
 let () =
   let _ =
     if Array.length Sys.argv <> 3 then

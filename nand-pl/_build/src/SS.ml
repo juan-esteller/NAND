@@ -378,50 +378,53 @@ and enableWhileProg (p: program) : program =
   in (enableWhileProgHelp p); (List.rev !fxndefs) @ !left
 
 let indexTrackProg = 
-  parseStr
+ parseStr
   "iszero_0 := one
    if(iszero_i) {
-     movedright := one
+     movingright := one
    }
-   if(NOT(seen_i)) {
-     movedright := zero
+   if(seen_i NAND seen_i) {
+     movingright := zero
      seen_i := one
-   }"
+   }"   
 
 let enableIndexTracking (p: program) : program = 
   if not Lang.supportsLoop then 
      p 
   else 
-    p @ indexTrackProg
+    indexTrackProg @ p 
 
 let rec expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID -> exp) =
-  let sweeping, wasoriginal, tempLoop, isoriginal = freshVar (), freshVar(), freshVar (), ("original", I) in  
+  let sweeping, finishedLooping, tempLoop, isoriginal = freshVar (), freshVar(), freshVar (), ("original", I) in  
   let storeLoop = parseStr ((strOfId tempLoop)^" := loop") in 
   let recoverLoop = parseStr ("loop := "^(strOfId tempLoop)) in
   let makeLoopOne = parseStr "loop := one" in   
-  let originalAsg = parseStr ("original_i := one") in 
-  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), enableIncProg' (preIncrCode @ originalAsg @ storeLoop))  in
+  let originalAsgOne = parseStr "original_i := one" in 
+  let originalAsgZero = parseStr "original_i := zero" in  
   let sweepingAsgZero = parseStr ((strOfId sweeping)^" := zero") in  
   let sweepingAsgOne = parseStr ((strOfId sweeping)^" := one") in 
-  let postIncrProg = If(op wasoriginal, recoverLoop @ sweepingAsgZero @ postIncrCode) in 
-  let updateWasOriginal =  parseStr ((strOfId wasoriginal)^" := original_i original_i := zero") in 
-      preIncrProg :: makeLoopOne @ sweepingAsgOne @ [postIncrProg] @ updateWasOriginal 
+  let loopingAsgOne = parseStr ((strOfId finishedLooping)^" := one") in 
+  let loopingAsgZero = parseStr ((strOfId finishedLooping)^" := zero") in 
+  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), (preIncrCode @ originalAsgOne @ storeLoop @ sweepingAsgOne))  in
+  let postIncrProg = If(Var(finishedLooping), enableIncProg' (recoverLoop @ postIncrCode @ loopingAsgZero @ sweepingAsgZero)) in 
+  let updateLooping = If(FxnApp("AND", [FxnApp("NOT", [Var(finishedLooping)]); op isoriginal]), originalAsgZero @ loopingAsgOne) in 
+      preIncrProg :: makeLoopOne @ [postIncrProg] @ [updateLooping]
 (* macro to process incrementation command in NAND++ and NAND<< programs-- 
    assumes other SS is boiled out already *) 
 and enableIncProg' (p: program) : program  = 
-  let right = ref [] in 
+  let left = ref [] in 
   let rec helpEnableIncProg (p: program) : unit = 
-   match List.rev p with 
+   match p with 
    | [] -> () 
    | h::t -> (match h with 
-              | IndexOp(op) -> right := expandIndexOp (List.rev t) !right  op  
-              | c -> right :=  c::!right; helpEnableIncProg (List.rev t)) 
+              | IndexOp(op) -> left := expandIndexOp !left t op  
+              | c -> left := !left @ [c]; helpEnableIncProg t) 
   in let _ = helpEnableIncProg p in
-     !right
+     !left
 
 let enableIncProg (p: program) : program = 
   let p' = enableIncProg' p in 
-    let firstpart = ((enableIfProg ((enableNestedApp enableNestedIfProg) (enableIndexTracking (addStdLib p'))))) in  
+    let firstpart = ((enableIfProg ((enableNestedApp enableNestedIfProg) (addStdLib (enableIndexTracking p'))))) in  
       enableAsgProg (enableFuncProg ((enableNestedApp enableNestedFuncProg) firstpart))
 (* other macros to be applied to program, in order of their application *)
 let macroList = [unzipProg; enableAsgProg; enableNestedFuncProg; enableNestedIfProg]

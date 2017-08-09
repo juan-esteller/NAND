@@ -32,13 +32,13 @@
 # Target: src/PL_modules.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/PL_modules.cmo, file:src/PL_modules.ml, implem, ocaml, quiet }
 /usr/bin/ocamlc -c -I src -I parsing -o src/PL_modules.cmo src/PL_modules.ml # cached
 # Target: src/SS.ml.depends, tags: { extension:ml, file:src/SS.ml, ocaml, ocamldep, quiet }
-/usr/bin/ocamldep -modules src/SS.ml > src/SS.ml.depends
+/usr/bin/ocamldep -modules src/SS.ml > src/SS.ml.depends # cached
 # Target: src/SS.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/SS.cmo, file:src/SS.ml, implem, ocaml, quiet }
-/usr/bin/ocamlc -c -I src -I parsing -o src/SS.cmo src/SS.ml
+/usr/bin/ocamlc -c -I src -I parsing -o src/SS.cmo src/SS.ml # cached
 # Target: src/file_exec.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:src/file_exec.cmo, file:src/file_exec.ml, implem, ocaml, quiet }
-/usr/bin/ocamlc -c -I src -I parsing -o src/file_exec.cmo src/file_exec.ml
+/usr/bin/ocamlc -c -I src -I parsing -o src/file_exec.cmo src/file_exec.ml # cached
 # Target: main.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet }
-/usr/bin/ocamlc -c -I parsing -I src -o main.cmo main.ml
+/usr/bin/ocamlc -c -I parsing -I src -o main.cmo main.ml # cached
 # Target: src/binops.cmx, tags: { compile, extension:cmx, extension:ml, file:src/binops.cmx, file:src/binops.ml, implem, native, ocaml, quiet }
 /usr/bin/ocamlopt -c -I src -I parsing -o src/binops.cmx src/binops.ml # cached
 # Target: src/PL_functor.cmx, tags: { compile, extension:cmx, extension:ml, file:src/PL_functor.cmx, file:src/PL_functor.ml, implem, native, ocaml, quiet }
@@ -54,11 +54,11 @@
 # Target: src/PL_modules.cmx, tags: { compile, extension:cmx, extension:ml, file:src/PL_modules.cmx, file:src/PL_modules.ml, implem, native, ocaml, quiet }
 /usr/bin/ocamlopt -c -I src -I parsing -o src/PL_modules.cmx src/PL_modules.ml # cached
 # Target: src/SS.cmx, tags: { compile, extension:cmx, extension:ml, file:src/SS.cmx, file:src/SS.ml, implem, native, ocaml, quiet }
-/usr/bin/ocamlopt -c -I src -I parsing -o src/SS.cmx src/SS.ml
+/usr/bin/ocamlopt -c -I src -I parsing -o src/SS.cmx src/SS.ml # cached
 # Target: src/file_exec.cmx, tags: { compile, extension:cmx, extension:ml, file:src/file_exec.cmx, file:src/file_exec.ml, implem, native, ocaml, quiet }
 /usr/bin/ocamlopt -c -I src -I parsing -o src/file_exec.cmx src/file_exec.ml # cached
 # Target: main.cmx, tags: { compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet }
 /usr/bin/ocamlopt -c -I parsing -I src -o main.cmx main.ml # cached
 # Target: main.native, tags: { dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet }
-/usr/bin/ocamlopt src/binops.cmx src/PL_functor.cmx src/indexops.cmx parsing/NANDparser.cmx parsing/NANDlexer.cmx src/PL_modules.cmx src/SS.cmx src/file_exec.cmx main.cmx -o main.native
+/usr/bin/ocamlopt src/binops.cmx src/PL_functor.cmx src/indexops.cmx parsing/NANDparser.cmx parsing/NANDlexer.cmx src/PL_modules.cmx src/SS.cmx src/file_exec.cmx main.cmx -o main.native # cached
 # Compilation successful.
