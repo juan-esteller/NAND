@@ -395,20 +395,20 @@ let enableIndexTracking (p: program) : program =
     indexTrackProg @ p 
 
 let rec expandIndexOp (preIncrCode: program) (postIncrCode : program) (op: varID -> exp) =
-  let sweeping, finishedLooping, tempLoop, isoriginal = freshVar (), freshVar(), freshVar (), ("original", I) in  
+  let sweeping, finishedLooping, tempLoop, isoriginal = freshVar (), freshVar (),  freshVar (), ("original", I) in  
   let storeLoop = parseStr ((strOfId tempLoop)^" := loop") in 
   let recoverLoop = parseStr ("loop := "^(strOfId tempLoop)) in
   let makeLoopOne = parseStr "loop := one" in   
-  let originalAsgOne = parseStr "original_i := one" in 
   let originalAsgZero = parseStr "original_i := zero" in  
+  let originalAsgOne = parseStr "original_i := one" in 
   let sweepingAsgZero = parseStr ((strOfId sweeping)^" := zero") in  
   let sweepingAsgOne = parseStr ((strOfId sweeping)^" := one") in 
-  let loopingAsgOne = parseStr ((strOfId finishedLooping)^" := one") in 
   let loopingAsgZero = parseStr ((strOfId finishedLooping)^" := zero") in 
-  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), (preIncrCode @ originalAsgOne @ storeLoop @ sweepingAsgOne))  in
+  let loopingAsgOne = parseStr ((strOfId finishedLooping)^" := one") in 
+  let preIncrProg = If(FxnApp("NOT", [Var(sweeping)]), (preIncrCode @ originalAsgOne @ storeLoop @ sweepingAsgOne @ makeLoopOne)) in
   let postIncrProg = If(Var(finishedLooping), enableIncProg' (recoverLoop @ postIncrCode @ loopingAsgZero @ sweepingAsgZero)) in 
   let updateLooping = If(FxnApp("AND", [FxnApp("NOT", [Var(finishedLooping)]); op isoriginal]), originalAsgZero @ loopingAsgOne) in 
-      preIncrProg :: makeLoopOne @ [postIncrProg] @ [updateLooping]
+      preIncrProg :: postIncrProg :: [updateLooping]
 (* macro to process incrementation command in NAND++ and NAND<< programs-- 
    assumes other SS is boiled out already *) 
 and enableIncProg' (p: program) : program  = 

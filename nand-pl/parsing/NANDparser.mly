@@ -35,6 +35,8 @@ let checkWriteId (id: varID) : unit =
 %token                                 WHILE 
 %token <PL_functor.funcID>             FUNC_ID
 %token                                 IF 
+%token                                 PRINT 
+
 /* Declarations of associativity */
 %left BINOP  
  
@@ -61,6 +63,7 @@ nandCom:
              raise (Invalid_operation) 
            else 
              IndexOp($2) } 
+  | PRINT LEFT_PAREN VAR_ID RIGHT_PAREN { Print($3) }  
 exps:
   | exp COMMA exps { $1 :: $3 }  
   | exp { [$1] }  

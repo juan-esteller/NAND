@@ -14,6 +14,7 @@ type token =
   | WHILE
   | FUNC_ID of (PL_functor.funcID)
   | IF
+  | PRINT
 
 val parseProg :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> PL_functor.program

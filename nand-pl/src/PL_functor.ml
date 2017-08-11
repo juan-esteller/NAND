@@ -47,6 +47,8 @@ and  command =
    (* while loop w/ intuitive meaning *)  
   | While of exp * program
   | IndexOp of indexop 
+   (* prints corresponding variable, for debugging purposes *) 
+  | Print of varID 
 and exp =
   | Const of int 
   | Var of varID
@@ -239,7 +241,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
-      let eval = evalExp pData st in
+      let evalVar = evalExp pData st in
       match c with
       | Asg([id], [Binop(b, l, r)]) ->
           let _ = checkId id in 
@@ -247,7 +249,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
              raise (Invalid_binop(b)) 
           else 
             let comStr = strOfCom c in 
-              let (lhsId, lhsVal), (rhsId, rhsVal) = eval l , eval r in
+              let (lhsId, lhsVal), (rhsId, rhsVal) = evalVar l , evalVar r in
                 let binop = binopOfStr b in 
                   let resVal, resId =binop lhsVal rhsVal, extractId !st id in
         begin
@@ -263,7 +265,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
            raise Invalid_command
          else 
           let comStr = strOfCom c in 
-            let id2Str, resVal = eval (Var(id2)) in
+            let id2Str, resVal = evalVar (Var(id2)) in
               let resId = extractId !st id1 in  
           begin 
             (st := VarMap.add resId resVal !st); 
@@ -272,6 +274,9 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
                       resId  (string_of_int resVal)); 
             incM pData c !st; 
           end   
+       | Print(id) ->
+           let idStr, idVal = evalVar (Var(id)) in 
+             Printf.printf "The value of %s is: %s\n" idStr (string_of_int idVal) 
        | _ -> raise Invalid_command 
 
     (* evaluation of a program; will attempt to evaluate according

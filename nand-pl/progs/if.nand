@@ -1,4 +1,5 @@
-if(v NAND v) { 
-  v := z NAND z 
-}
-y_0 := v 
+if(zero) { 
+  if(one) { 
+    y_i := one
+  } 
+} 

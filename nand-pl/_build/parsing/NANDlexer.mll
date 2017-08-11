@@ -21,6 +21,7 @@
                           ("}", RIGHT_BRACK);
                           ("if", IF);   
                           ("while", WHILE); 
+                          ("print", PRINT)
                         ] @ oplist) 
 
   (* conversion from string to index *) 
@@ -42,10 +43,12 @@
 
 let sym = ":=" | "," | "def" | "while" |  "(" | ")" | "{" | "}" | "if" | 
           "NAND" | "++" | "+" | "==" | "--" |  "-" | "/" | "*" | "<" | ">" | "%" | "^" | "&&" | 
-          "<<" | ">>"   
+          "<<" | ">>"  | "print"  
+
 let ind = ['0' - '9']+ | 'i'  
 let vBod = ['a' - 'z']+  
 let funcId = ['A' - 'Z']+
+
 rule token = parse
   | [' ' '\t' '\n'] { token lexbuf } (* skip whitespace *)
   | "//" [^'\n']* '\n' { token lexbuf } (* skip one-line comments *)
