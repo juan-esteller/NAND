@@ -237,7 +237,16 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
         | "i" -> (if not Lang.supportsI then 
                    raise Invalid_expression)
         | _ -> () 
-   
+
+    (* variable for whether we print execution of each line *) 
+    let printLines= ref true 
+
+    (* method to stop printing execution of each line *)  
+    let setVerbosity (b : bool) : unit = 
+      printLines := b 
+      
+  
+    (* method to make silent *) 
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
     let execCommand (pData: progData) (st: store ref) (c: command) : unit =
@@ -254,7 +263,8 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
                   let resVal, resId =binop lhsVal rhsVal, extractId !st id in
         begin
          (st := VarMap.add resId resVal !st);
-         (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
+         if !printLines then 
+           (Printf.printf "Executing commmand \"%s\", %s has value %s, %s has value %s, %s assigned value %s\n"
                        comStr lhsId (string_of_int  lhsVal)
                               rhsId (string_of_int  rhsVal)
                               resId (string_of_int  resVal));

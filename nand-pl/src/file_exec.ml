@@ -2,9 +2,6 @@ open PL_functor
 open PL_modules
 open SS 
 
-module NAND = PLFromBackEnd(NANDPP_back_end)  
-module SS_lang = SSFromBackEnd(NANDPP_back_end) 
-
 let executeFile (execute: program -> string -> string) (addSS: program -> program) 
                 (fileName: string) (input: string): string  =
   let startExt = (String.rindex fileName '.') + 1 in
