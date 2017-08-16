@@ -139,6 +139,8 @@ end
 exception Invalid_char of char
 exception Invalid_bit of int
 exception Invalid_binop of binop 
+
+let printLines = ref true 
  
 module PLFromBackEnd (Lang : PL_back_end) : PL_type =
   struct
@@ -238,14 +240,6 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
                    raise Invalid_expression)
         | _ -> () 
 
-    (* variable for whether we print execution of each line *) 
-    let printLines= ref true 
-
-    (* method to stop printing execution of each line *)  
-    let setVerbosity (b : bool) : unit = 
-      printLines := b 
-      
-  
     (* method to make silent *) 
     (* executes a command by updating store using Lang's function
        and incrementing m as necessary *)
