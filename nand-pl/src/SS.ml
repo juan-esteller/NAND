@@ -385,7 +385,7 @@ let otherMacros =
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  let p' =  (enableIfProg ((otherMacros (addStdLib p)))) in 
+  let p' =  (enableIfProg ((otherMacros p))) in 
     enableFuncProg p'
 
 end 

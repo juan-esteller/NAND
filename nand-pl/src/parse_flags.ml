@@ -28,5 +28,3 @@ let parseFlags (() : unit) : int =
     done  
   in 
     !curArg  
-
-
