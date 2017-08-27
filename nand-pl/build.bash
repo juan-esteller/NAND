@@ -7,7 +7,7 @@ function check_installs {
   echo "Checking that dependencies of NAND are installed"  
   for DEPEND in $DEPENDS 
   do 
-    if ! ls /usr/bin | grep -q $DEPEND; then
+    if ! type $DEPEND > /dev/null ; then
       echo "It looks like you don't have "$DEPEND" installed-- aborting build." ;
       exit 1 ;
     fi 
