@@ -1,9 +1,9 @@
 open PL_functor 
 open PL_modules
+open PL_data 
 open SS 
 
-let executeFile (execute: program -> string -> string) (addSS: program -> program) 
-                (fileName: string) (input: string): string  =
+let executeFile (fileName: string) (input: string): string  =
   let startExt = (String.rindex fileName '.') + 1 in
   let ext = String.sub fileName startExt ((String.length fileName) - startExt) in
     let _ =
@@ -12,5 +12,7 @@ let executeFile (execute: program -> string -> string) (addSS: program -> progra
   let file = open_in fileName in
   let lexbuf = Lexing.from_channel file in
   let program = NANDparser.parseProg NANDlexer.token lexbuf in
-  let program = addSS program in  
-     execute program input 
+    if !ssSwitch then 
+      nand.execute (nand.addSS program) input  
+    else 
+      nand.execute program input 

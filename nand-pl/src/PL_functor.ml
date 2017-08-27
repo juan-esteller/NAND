@@ -160,7 +160,6 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
 
       (* returns output of a store as a binary string *)
     let stringOfStore (s: store) (m: int) : string =
-      let _ = Printf.printf "Value of m is %i\n" m in 
       let rec helpEvalStore (s: store) (i: int) : string =
         let id = ("y", Int(i)) in
           if i < m then

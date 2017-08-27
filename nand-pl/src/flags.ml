@@ -17,9 +17,13 @@ let makeGG ((): unit) : unit =
     nand.addSS <- NANDGG_SS.addSS; 
   end 
 
-
+(* turns SS on by setting switch *) 
+let turnSSOn ((): unit) : unit = 
+  ssSwitch := true
 
 let flags = 
   [("-s", makeSilent); 
    ("-pp", makePP);
-   ("-gg", makeGG);] 
+   ("-gg", makeGG);
+   ("-addSS", turnSSOn); 
+    ] 
