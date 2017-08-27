@@ -46,7 +46,6 @@ and  command =
   | FxnDef of funcID * func
    (* while loop w/ intuitive meaning *)  
   | While of exp * program
-  | IndexOp of indexop 
    (* prints corresponding variable, for debugging purposes *) 
   | Print of varID 
 and exp =
@@ -59,7 +58,6 @@ and func = {
     outputs: args;
     body: program;
   }
-and indexop = varID -> exp 
 
 exception Invalid_command
 exception Invalid_expression

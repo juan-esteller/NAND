@@ -1,7 +1,6 @@
 %{
 open PL_functor;;
 open Binops ;; 
-open Indexops ;; 
 
 exception Invalid_operation
  
@@ -25,7 +24,6 @@ let checkWriteId (id: varID) : unit =
 %token                                 EOF
 %token <PL_functor.varID>              VAR_ID
 %token <Binops.binop>                  BINOP 
-%token <PL_functor.indexop>            INDEXOP 
 %token                                 ASG
 %token                                 COMMA
 %token <int>                           CONST
@@ -57,12 +55,6 @@ nandCom:
        { If($3, $6) } 
   | WHILE LEFT_PAREN exp RIGHT_PAREN LEFT_BRACK nandProg RIGHT_BRACK
        { While($3, $6) } 
-  | VAR_ID INDEXOP  
-       { let bod, ind = $1 in 
-           if bod <> "i" || ind <> Int(0) then 
-             raise (Invalid_operation) 
-           else 
-             IndexOp($2) } 
   | PRINT LEFT_PAREN VAR_ID RIGHT_PAREN { Print($3) }  
 exps:
   | exp COMMA exps { $1 :: $3 }  

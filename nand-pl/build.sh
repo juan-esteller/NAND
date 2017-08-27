@@ -26,5 +26,5 @@ echo "Starting build"
 if ocamlbuild main.native -Is $INCLUDE_DIRS ; then 
   echo "Build succeeded" 
 else 
-  echo "Build failed" 
+  echo "Build failed-- compilation exited with code $?" 
 fi 
