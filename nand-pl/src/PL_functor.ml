@@ -234,7 +234,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
         match body with 
         | "validx" -> raise (Invalid_expression)
         | "i" -> (if not Lang.supportsI then 
-                   raise Invalid_expression)
+                   (Printf.printf "Exception raised here\n"); raise Invalid_expression)
         | _ -> () 
 
     (* method to make silent *) 

@@ -1,7 +1,5 @@
 while(validx_i) { 
-  if(validx_i) { 
     y_i := one  
     cur := cur + one 
     i := cur 
-  } 
 }

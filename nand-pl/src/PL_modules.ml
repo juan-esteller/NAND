@@ -46,7 +46,7 @@ module NANDPP_back_end : PL_back_end =
  
     let supportsLoop = true 
     
-    let supportsI = false 
+    let supportsI = true 
     
     let supportsAsg = false
     

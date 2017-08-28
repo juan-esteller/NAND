@@ -308,7 +308,7 @@ let expandIf (e: exp) (p: program) : program =
             [c]   
         else let newH = freshVar () in 
             [Asg([newH], [e])] @ (enableMUX b (h, newH))  
-    | _ -> raise (Invalid_command)
+    | _ -> [c] 
   in let b = strip e in
       let newB = freshVar () in 
         let asg = enableAsgProg (parseStr ((strOfId newB)^" := "^(strOfId b))) in 
@@ -357,7 +357,9 @@ and expandWhile (e: exp) (preloop: program) (body: program) (postloop: program) 
        genPostLoop finishedloop postloop
      in  (preloopcode @ loopcode @ postloopcode) 
 and enableWhileProg (p: program) : program =
-  let left = ref [] in
+  if Lang.supportsI then 
+    p 
+  else let left = ref [] in
   let fxndefs = ref [] in  
     let rec enableWhileProgHelp (p: program) : unit = 
       match p with 
@@ -385,7 +387,7 @@ let otherMacros =
                  (List.map enableNestedApp macroList)
 
 let addSS (p: program) : program =
-  let p' =  (enableIfProg ((otherMacros p))) in 
+  let p' =  (enableIfProg ((otherMacros (enableWhileProg (addStdLib p))))) in 
     enableFuncProg p'
 
 end 

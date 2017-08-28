@@ -24,6 +24,6 @@ let turnSSOn ((): unit) : unit =
 let flags = 
   [("-s", makeSilent); 
    ("-pp", makePP);
-   ("-gg", makeGG);
+   ("-ll", makeGG);
    ("-addSS", turnSSOn); 
     ] 
