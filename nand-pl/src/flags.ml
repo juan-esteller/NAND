@@ -3,7 +3,7 @@ open PL_modules
 open PL_data 
 
 let makeSilent ((): unit) : unit = 
-  printLines := false 
+  nand.isSilent <- false 
 
 let makePP ((): unit) : unit = 
   begin 
@@ -19,11 +19,15 @@ let makeGG ((): unit) : unit =
 
 (* turns SS on by setting switch *) 
 let turnSSOn ((): unit) : unit = 
-  ssSwitch := true
+  nand.ssSwitch <- true
+
+let makeDry ((): unit) : unit = 
+  nand.dryRun <- true 
 
 let flags = 
   [("-s", makeSilent); 
    ("-pp", makePP);
    ("-ll", makeGG);
    ("-addSS", turnSSOn); 
+   ("-dry", makeDry);
     ] 

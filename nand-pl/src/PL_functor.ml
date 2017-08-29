@@ -68,14 +68,14 @@ let mapOverCom (f: binop option -> varID -> exp -> exp option -> 'a) (c: command
   match c with
   | Asg([h], [Binop(b, l, r)]) -> f (Some b) h l (Some r)
   | Asg([h], [Var(id)]) ->  f None h (Var(id)) None 
-  | _ -> raise Invalid_command
+  | _ -> (Printf.printf "DEBUG: mapoverCom"); raise Invalid_command
 
 (* converts valid run-time expressions to strings *)
 let strOfExp (e: exp) : string =
   match e with
   | Var(x) -> strOfId x
   | Const(b) -> if b = 0  then "zero" else "one"
-  | _ -> raise Invalid_command
+  | _ -> (Printf.printf "DEBUG: strofexp\n"); raise Invalid_command
 
 (* ditto, for commands *)
 let strOfCom: command ->  string =
@@ -83,13 +83,17 @@ let strOfCom: command ->  string =
     match b, r with 
     | Some b, Some r -> (strOfId h)^" := "^(strOfExp l)^" "^b^" "^(strOfExp r)
     | None, None -> (strOfId h)^" := "^(strOfExp l) 
-    | _ -> raise Invalid_command
+    | _ -> (Printf.printf "DEBUG: strofcom\n"); raise Invalid_command
   in mapOverCom f
 
 (* function for converting valid run-time programs into strings *)
 
 let strOfProg (p: program) : string =
   String.concat "\n" (List.map strOfCom p)
+
+let printProg (p: program) (f: string) : unit = 
+  let _ = Printf.printf "printProg has been called!\n" in   
+  Printf.printf "%s" (strOfProg p)
 
 (* module for mapping varIDs (= Strings) to their bit values *)
 module VarMap = Map.Make(String)
