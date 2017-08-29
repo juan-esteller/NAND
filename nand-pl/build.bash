@@ -32,48 +32,4 @@ function build_nand {
   fi 
 }
 
-# function that installs nand by creating alias in .bashrc or .bash_profile, depending on OS 
-function install_nand { 
-  CUR_DIR=`pwd`
-  NAND=$CUR_DIR/main.native 
-
-  if [ ! -f $NAND ]; then 
-    echo "NAND has not yet been built or cannot be found by script; aborting installation" 
-    exit 1 
-  fi 
-   
-  NAND_ALIAS="alias nand=$NAND" 
-  OS=`uname`
- 
-  case $OS in 
-    "Linux") 
-      ALIAS_FILE=~/.bash_aliases
-    ;; 
-    "Darwin") 
-      ALIAS_FILE=~/bash_profile
-    ;; 
-    *) 
-      echo "Unrecognized operating system-- aborting installation" 
-    ;;
-  esac  
-
-
-}
- 
-if [ $# -ne 1 ]; then 
-  echo "Run ./build.bash with one of two arguments:" 
-  echo "make-- builds NAND source code" 
-  echo "install-- creates alias for nand executable" 
-else 
-  case $1 in
-    make) 
-      build_nand
-    ;; 
-    install) 
-      install_nand 
-    ;; 
-    *) 
-      echo "Unrecognized argument" 
-    ;;
-  esac 
-fi    
+build_nand

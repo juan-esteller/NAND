@@ -11,4 +11,5 @@ w := val NAND u
 s := v NAND w
 seen_i := z NAND z
 stop := validx_i NAND validx_i 
+print(y_0) 
 loop := stop NAND stop 
