@@ -278,8 +278,7 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
        | Print(id) ->
            let idStr, idVal = evalVar (Var(id)) in 
              Printf.printf "The value of %s is: %s\n" idStr (string_of_int idVal) 
-       | Asg(_, _) -> (Printf.printf "Took this path!"); raise Invalid_command 
-       | _ -> (Printf.printf "raise Invalid_command"); raise   
+       | _ -> raise Invalid_command  
 
     (* evaluation of a program; will attempt to evaluate according
        to specification of Lang, raise an error in the case that
