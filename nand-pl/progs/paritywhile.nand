@@ -3,7 +3,7 @@ def a := OR(b, c) {
 }
 def a := XOR(b, c) { 
   a := AND(OR(b, c), NOT(AND(b, c))) 
-} 
+}
 while(validx_i) { 
    parity := XOR(parity, x_i)
    cur := cur + one 
