@@ -1,4 +1,7 @@
 // Do val := (NOT seen_i) AND x_i
+if(NOT(seen_i)) { 
+  seen_i := one 
+} 
 tmp_1 := seen_i NAND seen_i
 tmp_2 := x_i NAND tmp_1
 val := tmp_2 NAND tmp_2
@@ -9,6 +12,5 @@ u := val NAND s
 v := s NAND u
 w := val NAND u
 s := v NAND w
-seen_i := z NAND z
 stop := validx_i NAND validx_i 
 loop := stop NAND stop 
