@@ -1,8 +1,8 @@
 // Do val := (NOT seen_i) AND x_i
+tmp_1 := seen_i NAND seen_i
 if(NOT(seen_i)) { 
   seen_i := one 
-} 
-tmp_1 := seen_i NAND seen_i
+}
 tmp_2 := x_i NAND tmp_1
 val := tmp_2 NAND tmp_2
 // Do s := s XOR xal
