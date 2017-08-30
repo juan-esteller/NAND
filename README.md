@@ -16,11 +16,11 @@ See in particular the following [appendix](http://www.introtcs.org/public/lec_A_
 * All NAND\* programs must have a filename that ends with `.nand` 
 * To run a program, type `nand [flags] <path/to/prog.nand> <binary input> 
 * The program will run, printing its trace and eventual output to stdout 
-* The recognized flags are as follows: 
+* The recognized flags are as follows:
 	* `-pp`, `-ll`: run the NAND++ and NAND<< interpreters, respectively. NAND is the default.
-        * `-addSS`: enables syntactic sugar for the program.  
-        * `-s`: silences the execution trace. 
-        * `-dry`: outputs the source of the program that would have been executed to stdout. 
+	* `-addSS`: enables syntactic sugar for the program.  
+	* `-s`: silences the execution trace. 
+	* `-dry`: outputs the source of the program that would have been executed to stdout. 
     
 	
 ## Dependencies
