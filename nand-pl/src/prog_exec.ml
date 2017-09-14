@@ -3,10 +3,8 @@ open PL_modules
 open PL_data 
 open SS 
 
-let executeChannel (inputToBuf: 'a -> Lexing.lexbuf) 
-  (prog: 'a) (input: string): string  =
-  let lexbuf = inputToBuf prog in
-  let program = NANDparser.parseProg NANDlexer.token lexbuf in
+
+let executeProgram (program: PL_functor.program) (input: string) : string =
    let program = 
     if nand.ssSwitch then 
       nand.addSS program
@@ -17,6 +15,14 @@ let executeChannel (inputToBuf: 'a -> Lexing.lexbuf)
          ""  
       else 
         nand.execute program input 
+
+let parseChannel (inputToBuf: 'a -> Lexing.lexbuf) 
+  (prog: 'a) : PL_functor.program =
+  let lexbuf = inputToBuf prog in
+      NANDparser.parseProg NANDlexer.token lexbuf
+
+let executeChannel (inputToBuf: 'a -> Lexing.lexbuf) (prog: 'a) (input: string) : string = 
+  executeProgram (parseChannel inputToBuf prog) input  
 
 let executeFile (filename: string) (input: string) : string = 
   let startExt = (String.rindex filename '.') + 1 in

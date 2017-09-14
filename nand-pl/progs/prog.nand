@@ -1,8 +1,5 @@
-if(x_0) {
-  y_0 := x_2
-}
-nx_0 := x_0 NAND x_0
-if(nx_0) {
-  y_0 := x_1 
-}
+def a := ID(c) { 
+  a := c
+} 
 
+y_0 := ID(ID(x_0))
