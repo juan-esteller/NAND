@@ -3,7 +3,7 @@ open PL_modules
 open PL_data 
 
 let makeSilent ((): unit) : unit = 
-  nand.isSilent <- false 
+  printLines := false 
 
 let makePP ((): unit) : unit = 
   begin 

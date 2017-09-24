@@ -274,9 +274,10 @@ module PLFromBackEnd (Lang : PL_back_end) : PL_type =
               let resId = extractId !st id1 in  
           begin 
             (st := VarMap.add resId resVal !st); 
-            (Printf.printf "Executing command \"%s\", %s has value %s, %s assigned value %s\n"
-               comStr id2Str (string_of_int resVal)  
-                      resId  (string_of_int resVal)); 
+            (if !printLines then 
+            Printf.printf "Executing command \"%s\", %s has value %s, %s assigned value %s\n"
+                comStr id2Str (string_of_int resVal)  
+                       resId  (string_of_int resVal));  
             incM pData c !st; 
           end   
        | Print(id) ->

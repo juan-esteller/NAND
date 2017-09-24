@@ -22,7 +22,6 @@ type pl_interface =
    
     (* various flags *) 
     mutable ssSwitch: bool; 
-    mutable isSilent: bool; 
     mutable dryRun: bool; 
   }
 
@@ -31,7 +30,5 @@ let nand =
   { execute = NAND.execute; 
     addSS = NAND_SS.addSS; 
     ssSwitch = false; 
-    isSilent = false;
     dryRun = false; 
   } 
-

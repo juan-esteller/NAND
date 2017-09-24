@@ -24,6 +24,10 @@ let parseChannel (inputToBuf: 'a -> Lexing.lexbuf)
 let executeChannel (inputToBuf: 'a -> Lexing.lexbuf) (prog: 'a) (input: string) : string = 
   executeProgram (parseChannel inputToBuf prog) input  
 
+let parseFile (filename: string) : PL_functor.program = 
+  parseChannel Lexing.from_channel (open_in filename) 
+  
+
 let executeFile (filename: string) (input: string) : string = 
   let startExt = (String.rindex filename '.') + 1 in
   let ext = String.sub filename startExt ((String.length filename) - startExt) in
