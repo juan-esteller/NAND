@@ -43,6 +43,7 @@ line:
       let _ = (line := !line + 1) in  
       let input = $1 in 
       let output = $3 in 
+      let _ = Printf.printf "Giving %s as input to program\n" input in 
       let prog_output = PL_data.nand.execute checkProg input  in 
         if prog_output <> output then
           begin  
